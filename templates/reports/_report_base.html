@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.name }} - 账巢{% endblock %}
+{% block content %}
+<div class="mb-3 flex items-center justify-between">
+  <div>
+    <a href="{% url 'reports:index' ledger.pk %}" class="text-xs text-gray-400">‹ 报表中心</a>
+    <h2 class="text-lg font-bold">{{ meta.name }}</h2>
+    <p class="text-xs text-gray-400">{{ meta.desc }}</p>
+  </div>
+</div>
+{% block report_params %}{% endblock %}
+{% block report_chart %}
+{% if chart and chart.labels %}
+<div class="card mb-3 p-3">
+  <div class="mb-2 flex gap-2">
+    <button type="button" onclick="LNSwitchChart('chart-main', 'bar')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">柱状图</button>
+    <button type="button" onclick="LNSwitchChart('chart-main', 'line')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">折线图</button>
+    <button type="button" onclick="LNSwitchChart('chart-main', 'pie')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">饼图</button>
+  </div>
+  <div id="chart-main" class="h-60 w-full" data-chart='{{ chart_json|safe }}' data-chart-type="{{ chart_type }}"></div>
+</div>
+{% endif %}
+{% endblock %}
+{% block report_table %}{% endblock %}
+<div class="mt-4 flex flex-wrap gap-2">
+  {% block export_links %}
+  <a class="btn-secondary text-sm" href="{% url 'imports:export_report' ledger.pk %}?format=csv&report_key={{ key }}{% for k, v in params.items %}&{{ k }}={{ v }}{% endfor %}">导出 CSV</a>
+  <a class="btn-secondary text-sm" href="{% url 'imports:export_report' ledger.pk %}?format=xlsx&report_key={{ key }}{% for k, v in params.items %}&{{ k }}={{ v }}{% endfor %}">导出 XLSX</a>
+  {% endblock %}
+</div>
+{% endblock %}

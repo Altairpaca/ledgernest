@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}创建用户 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4"><h2 class="text-lg font-bold">创建用户</h2></div>
+<form method="post" class="card space-y-3 p-4">
+  {% csrf_token %}
+  <div>
+    <label class="form-label">用户名</label>
+    <input name="username" required maxlength="150" class="form-input">
+  </div>
+  <div>
+    <label class="form-label">显示名称</label>
+    <input name="display_name" maxlength="64" class="form-input">
+  </div>
+  <div>
+    <label class="form-label">邮箱</label>
+    <input name="email" type="email" class="form-input">
+  </div>
+  <div>
+    <label class="form-label">初始密码</label>
+    <input name="password" type="text" required class="form-input" placeholder="请复制给用户并提醒修改">
+  </div>
+  <button type="submit" class="btn-primary w-full">创建用户</button>
+</form>
+<p class="mt-2 text-xs text-gray-400">新用户首次登录后可在「个人设置」中修改密码。</p>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{% if account %}编辑{% else %}新增{% endif %}账户 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'transactions:accounts' ledger.pk %}" class="text-xs text-gray-400">‹ 账户管理</a>
+  <h2 class="text-lg font-bold">{% if account %}编辑账户{% else %}新增账户{% endif %}</h2>
+</div>
+<form method="post" class="card space-y-3 p-4">
+  {% csrf_token %}
+  {% for field in form %}
+  <div>
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.name == "account_type" %}
+    <select name="account_type" id="{{ field.id_for_label }}" class="form-select">
+      {% for v, label in field.field.choices %}<option value="{{ v }}" {% if field.value == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.errors %}<p class="mt-1 text-sm text-red-500">{{ field.errors.0 }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  <div class="flex gap-3 pt-1">
+    <button type="submit" class="btn-primary flex-1">保存</button>
+    <a href="{% url 'transactions:accounts' ledger.pk %}" class="btn-secondary">取消</a>
+  </div>
+</form>
+{% endblock %}

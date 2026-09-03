@@ -1,0 +1,74 @@
+{% load static %}<!DOCTYPE html>
+<html lang="zh-hans" class="{% if request.COOKIES.ln_theme %}{{ request.COOKIES.ln_theme }}{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f7d5f">
+  <title>{% block title %}账巢 LedgerNest{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'vendor/alpine.min.js' %}" defer></script>
+  <script src="{% static 'vendor/echarts.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block head %}{% endblock %}
+</head>
+<body class="pb-16 md:pb-0">
+  {% block body %}
+  <header class="sticky top-0 z-30 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-900/90">
+    <div class="mx-auto flex max-w-app items-center gap-2 px-3 py-2.5">
+      {% block header_left %}{% endblock %}
+      <div class="min-w-0 flex-1 text-center">
+        {% if current_ledger %}
+        <div class="truncate text-sm font-semibold">{{ current_ledger.name }}</div>
+        <div class="text-xs text-gray-400">{{ current_ledger.base_currency }}</div>
+        {% else %}
+        <div class="font-semibold">账巢 LedgerNest</div>
+        {% endif %}
+      </div>
+      {% block header_right %}{% endblock %}
+    </div>
+  </header>
+
+  <main class="mx-auto min-h-[calc(100dvh-120px)] max-w-app px-3 pb-8 pt-3">
+    {% include "core/_messages.html" %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {% if current_ledger %}
+  <nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95 md:hidden">
+    <div class="mx-auto grid max-w-app grid-cols-5">
+      <a href="{% url 'ledgers:dashboard' current_ledger.pk %}" class="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] {% if active_nav == 'dashboard' %}nav-active{% endif %}">
+        <span class="text-xl leading-none">🏠</span><span>首页</span>
+      </a>
+      <a href="{% url 'transactions:list' current_ledger.pk %}" class="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] {% if active_nav == 'transactions' %}nav-active{% endif %}">
+        <span class="text-xl leading-none">📒</span><span>流水</span>
+      </a>
+      <a href="{% url 'transactions:quick_add' current_ledger.pk %}" class="flex min-h-[56px] flex-col items-center justify-center">
+        <span class="-mt-5 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-2xl font-bold text-white shadow-lg shadow-brand-600/30">＋</span>
+        <span class="text-[11px] mt-0.5 {% if active_nav == 'quick_add' %}nav-active{% endif %}">记一笔</span>
+      </a>
+      <a href="{% url 'reports:index' current_ledger.pk %}" class="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] {% if active_nav == 'reports' %}nav-active{% endif %}">
+        <span class="text-xl leading-none">📊</span><span>报表</span>
+      </a>
+      <a href="{% url 'accounts:settings' %}" class="flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] {% if active_nav == 'more' %}nav-active{% endif %}">
+        <span class="text-xl leading-none">☰</span><span>更多</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- 桌面端顶栏快捷入口 -->
+  <div class="hidden border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 md:block">
+    <div class="mx-auto flex max-w-app items-center justify-center gap-1 py-1 text-sm">
+      <a class="rounded-lg px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800" href="{% url 'ledgers:dashboard' current_ledger.pk %}">首页</a>
+      <a class="rounded-lg px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800" href="{% url 'transactions:list' current_ledger.pk %}">流水</a>
+      <a class="rounded-lg bg-brand-600 px-4 py-1.5 font-medium text-white" href="{% url 'transactions:quick_add' current_ledger.pk %}">＋ 记一笔</a>
+      <a class="rounded-lg px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800" href="{% url 'reports:index' current_ledger.pk %}">报表</a>
+      <a class="rounded-lg px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800" href="{% url 'accounts:settings' %}">更多</a>
+    </div>
+  </div>
+  {% endif %}
+  {% endblock %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

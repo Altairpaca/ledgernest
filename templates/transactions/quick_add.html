@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}记一笔 - 账巢{% endblock %}
+{% block head %}
+<style>
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .cat-item { min-height: 52px; }
+  .sub-cat-item { min-height: 44px; }
+  @media (min-width: 640px) { .cat-grid { grid-template-columns: repeat(6, 1fr); } }
+</style>
+{% endblock %}
+{% block header_left %}<a href="{% url 'transactions:list' ledger.pk %}" class="btn-ghost !px-2 !py-1">✕</a>{% endblock %}
+{% block content %}
+<div x-data="quickAdd()" x-init="init()" class="mx-auto max-w-lg">
+  <form method="post" id="quick-form">
+    {% csrf_token %}
+    {{ form.type.as_hidden }}
+    {{ form.split_category_ids }}
+    {{ form.split_amounts }}
+
+    {% if form.non_field_errors %}
+    <div class="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-600 dark:border-red-900 dark:bg-red-950 dark:text-red-400">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <!-- 类型切换 -->
+    <div class="mb-4 grid grid-cols-3 gap-2 md:grid-cols-6" role="tablist">
+      {% for value, label in form.type.field.choices %}
+      <button type="button" @click="switchType('{{ value }}')"
+        class="min-h-[44px] rounded-xl border text-sm font-medium transition-colors"
+        :class="type === '{{ value }}' ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'">
+        {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- 金额 -->
+    <div class="mb-3">
+      <div class="relative">
+        <input type="text" inputmode="decimal" autocomplete="off" id="amount-input"
+          class="w-full rounded-2xl border border-gray-300 bg-white px-4 py-4 text-center text-4xl font-bold tracking-wide outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-gray-700 dark:bg-gray-800 md:py-3 md:text-3xl"
+          :placeholder="type === 'adjustment' ? '±金额' : '0.00'"
+          name="amount" x-model="amount" @input="cleanAmount()"
+          :readonly="isMobile">
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">{{ ledger.base_currency }}</span>
+      </div>
+      {% if form.amount.errors %}<p class="mt-1 text-sm text-red-500">{{ form.amount.errors.0 }}</p>{% endif %}
+      <div class="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+        <template x-for="n in quickAmounts" :key="n">
+          <button type="button" @click="amount = String(n)" class="shrink-0 rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-sm text-gray-600 active:bg-brand-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">+<span x-text="n"></span></button>
+        </template>
+      </div>
+    </div>
+
+    <div class="mb-4 select-none md:hidden">
+      <div class="grid grid-cols-4 gap-1.5">
+        <template x-for="k in ['1','2','3','4','5','6','7','8','9','.', '0']" :key="k">
+          <button type="button" :data-key="k" @click="keyPress(k)"
+            class="min-h-[48px] rounded-xl border border-gray-200 bg-white text-lg font-medium text-gray-700 active:bg-brand-50 active:scale-95 transition-transform dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+            x-text="k"></button>
+        </template>
+        <button type="button" data-key="backspace" @click="keyPress('⌫')" class="min-h-[48px] rounded-xl border border-gray-200 bg-white text-lg text-gray-500 active:bg-gray-100 active:scale-95 transition-transform dark:border-gray-700 dark:bg-gray-800">⌫</button>
+        <button type="button" data-key="clear" @click="amount = ''" class="min-h-[48px] rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-400 active:bg-gray-100 active:scale-95 transition-transform dark:border-gray-700 dark:bg-gray-800">清空</button>
+      </div>
+    </div>
+
+    <!-- 账户（转账显示两个） -->
+    <div class="mb-4" x-show="type !== 'transfer'">
+      <label class="form-label">账户</label>
+      <div class="flex gap-2 overflow-x-auto pb-1" id="account-chips">
+        <template x-for="acc in accounts" :key="acc.id">
+          <button type="button" @click="account = account === acc.id ? null : acc.id"
+            class="shrink-0 rounded-xl border px-3 py-2 text-sm"
+            :class="account === acc.id ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'">
+            <span x-text="acc.name"></span>
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="from_account" :value="account" :disabled="type === 'transfer'" id="id_from_account_hidden">
+      {% if form.from_account.errors %}<p class="mt-1 text-sm text-red-500">{{ form.from_account.errors.0 }}</p>{% endif %}
+    </div>
+
+    <div class="mb-4" x-show="type === 'transfer'">
+      <label class="form-label">从</label>
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <template x-for="acc in accounts" :key="'f'+acc.id">
+          <button type="button" @click="fromAccount = fromAccount === acc.id ? null : acc.id"
+            class="shrink-0 rounded-xl border px-3 py-2 text-sm"
+            :class="fromAccount === acc.id ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'">
+            <span x-text="acc.name"></span>
+          </button>
+        </template>
+      </div>
+      <label class="form-label mt-3">到</label>
+      <div class="flex gap-2 overflow-x-auto pb-1">
+        <template x-for="acc in accounts" :key="'t'+acc.id">
+          <button type="button" @click="toAccount = toAccount === acc.id ? null : acc.id"
+            class="shrink-0 rounded-xl border px-3 py-2 text-sm"
+            :class="toAccount === acc.id ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'">
+            <span x-text="acc.name"></span>
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="from_account" :value="fromAccount" :disabled="type !== 'transfer'">
+      <input type="hidden" name="to_account" :value="toAccount" :disabled="type !== 'transfer'">
+      {% if form.to_account.errors %}<p class="mt-1 text-sm text-red-500">{{ form.to_account.errors.0 }}</p>{% endif %}
+    </div>
+
+    <!-- 分类（转账/调整隐藏） -->
+    <div class="mb-4" x-show="type === 'expense' || type === 'income'">
+      <label class="form-label">分类 <span class="text-gray-400">（可拆分到多个分类）</span></label>
+      <div class="cat-grid">
+        <template x-for="cat in topCategories" :key="cat.id">
+          <button type="button" @click="toggleCat(cat)"
+            class="cat-item flex flex-col items-center justify-center rounded-xl border text-center transition-colors"
+            :class="cat.selected ? 'border-brand-600 bg-brand-600 text-white' : (cat.children.length ? 'border-brand-200 bg-brand-50 dark:border-brand-900 dark:bg-brand-950' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900')">
+            <span class="flex h-8 w-8 items-center justify-center rounded-full text-base" :class="cat.selected ? 'bg-white/25' : iconColor(cat.icon)"><span x-text="cat.icon || '▣'"></span></span>
+            <span class="mt-0.5 w-full truncate px-1 text-xs" :class="cat.selected ? 'text-white' : 'text-gray-700 dark:text-gray-300'" x-text="cat.name"></span>
+          </button>
+        </template>
+      </div>
+      <div class="mt-2 space-y-1.5" x-show="subCategories.length">
+        <template x-for="sub in subCategories" :key="sub.id">
+          <button type="button" @click="toggleCat(sub)"
+            class="sub-cat-item flex w-full items-center gap-2 rounded-xl border px-3 text-sm"
+            :class="sub.selected ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300'">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm" :class="sub.selected ? 'bg-white/25' : iconColor(sub.icon)"><span x-text="sub.icon || '·'"></span></span>
+            <span class="flex-1 text-left" x-text="sub.name"></span>
+            <span x-show="sub.selected">✓</span>
+          </button>
+        </template>
+      </div>
+      <input type="hidden" name="category" :value="mainCategory">
+      {% if form.category.errors %}<p class="mt-1 text-sm text-red-500">{{ form.category.errors.0 }}</p>{% endif %}
+    </div>
+
+    <!-- 拆分 -->
+    <div class="card mb-4 p-3" x-show="(type === 'expense' || type === 'income') && splitOpen">
+      <div class="mb-2 flex items-center justify-between">
+        <span class="text-sm font-medium">拆分（合计须等于 <span x-text="amount || '0'"></span>）</span>
+        <span class="text-xs text-gray-400" x-text="'已分配：' + splitTotal"></span>
+      </div>
+      <div class="space-y-2">
+        <template x-for="(s, i) in splitRows" :key="i">
+          <div class="flex items-center gap-2">
+            <select class="form-input !min-h-[40px] flex-1" x-model.number="s.categoryId">
+              <option value="">选择分类…</option>
+              <template x-for="c in allCategories" :key="c.id">
+                <option :value="c.id" x-text="c.depthPrefix + c.name"></option>
+              </template>
+            </select>
+            <input type="number" inputmode="decimal" step="0.01" class="form-input !min-h-[40px] w-24 text-right" x-model="s.amount" placeholder="金额">
+            <button type="button" @click="splitRows.splice(i, 1)" class="btn-ghost !min-h-[40px] !px-2">✕</button>
+          </div>
+        </template>
+      </div>
+      <button type="button" @click="splitRows.push({categoryId: '', amount: ''})" class="btn-secondary mt-2 w-full !min-h-[40px] text-sm">＋ 添加拆分行</button>
+      <p class="mt-1 text-xs text-gray-400" x-show="splitRows.length === 0">拆分后主分类可留空，统计按拆分分类。</p>
+    </div>
+
+    <!-- 更多选项 -->
+    <details class="card mb-4 p-3">
+      <summary class="cursor-pointer text-sm font-medium text-gray-500">更多选项</summary>
+      <div class="mt-3 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">日期</label>
+            <input type="date" name="date" class="form-input" value="{{ form.date.value|date:'Y-m-d'|default:'' }}">
+          </div>
+          <div x-show="type !== 'transfer'">
+            <label class="form-label">交易对象</label>
+            <input type="text" name="counterparty" class="form-input" placeholder="可选" value="{{ form.counterparty.value|default:'' }}">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">备注</label>
+          <input type="text" name="description" maxlength="255" class="form-input" placeholder="可选" value="{{ form.description.value|default:'' }}">
+        </div>
+        <div>
+          <label class="form-label">标签（逗号分隔）</label>
+          <input type="text" name="tag_names" class="form-input" list="tag-list" placeholder="如：家庭, 重要" value="{{ form.tag_names.value|default:'' }}">
+          <datalist id="tag-list">
+            {% for tag in all_tags %}<option value="{{ tag.name }}">{% endfor %}
+          </datalist>
+        </div>
+        <div class="grid grid-cols-2 gap-3" x-show="type !== 'adjustment'">
+          <div>
+            <label class="form-label">币种</label>
+            <input type="text" name="currency" class="form-input" maxlength="8" value="{{ form.currency.value|default:ledger.base_currency }}">
+          </div>
+          <div>
+            <label class="form-label">汇率（→基础币）</label>
+            <input type="number" name="exchange_rate" inputmode="decimal" step="0.000001" class="form-input" value="{{ form.exchange_rate.value|default:'1' }}">
+          </div>
+        </div>
+        <label class="flex items-center gap-2 text-sm">
+          <input type="checkbox" x-model="splitOpen" class="h-5 w-5 accent-brand-600"> 启用分类拆分
+        </label>
+      </div>
+    </details>
+
+    <!-- 拆分数据回填 -->
+    <script type="application/json" id="split-json">[]</script>
+
+    <div class="safe-bottom sticky bottom-16 z-10 -mx-3 bg-gray-50/95 px-3 pb-2 pt-1 backdrop-blur dark:bg-gray-950/95 md:static md:bottom-0 md:mx-0 md:bg-transparent md:p-0">
+      <button type="submit" class="btn-primary w-full text-base" :disabled="saving" x-text="saving ? '保存中…' : submitLabel"></button>
+    </div>
+  </form>
+</div>
+
+<script>
+function quickAdd() {
+  const catsJson = {{ expense_cats_json|safe }};
+  const incomeJson = {{ income_cats_json|safe }};
+  const accountsJson = {{ accounts_json|safe }};
+  const state = {{ quick_state_json|safe }};
+  return {
+    type: state.type || "expense",
+    amount: state.amount || "",
+    account: state.account ? parseInt(state.account) : null,
+    fromAccount: state.fromAccount ? parseInt(state.fromAccount) : null,
+    toAccount: state.toAccount ? parseInt(state.toAccount) : null,
+    selectedCats: state.category ? [{id: parseInt(state.category), name: ""}] : [],
+    splitOpen: false,
+    splitRows: [],
+    saving: false,
+    accounts: accountsJson,
+    quickAmounts: [10, 20, 50, 100, 200, 500],
+    iconPalette: [
+      "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-300",
+      "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300",
+      "bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-300",
+      "bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300",
+      "bg-pink-100 text-pink-700 dark:bg-pink-900/60 dark:text-pink-300",
+      "bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300",
+      "bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300",
+      "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300",
+    ],
+    iconColor(icon) {
+      const s = icon || "▣";
+      let code = 0;
+      for (const ch of s) code += ch.codePointAt(0);
+      return this.iconPalette[code % this.iconPalette.length];
+    },
+    get topCategories() {
+      const pool = this.type === "income" ? incomeJson : catsJson;
+      return pool.map(c => ({...c, selected: this.selectedCats.some(s => s.id === c.id), children: c.children || []}));
+    },
+    get subCategories() {
+      const pool = this.type === "income" ? incomeJson : catsJson;
+      const out = [];
+      pool.forEach(c => (c.children || []).forEach(sub => out.push({...sub, selected: this.selectedCats.some(s => s.id === sub.id)})));
+      return out;
+    },
+    get allCategories() {
+      const pool = this.type === "income" ? incomeJson : catsJson;
+      const out = [];
+      pool.forEach(c => { out.push({...c, depthPrefix: ""}); (c.children || []).forEach(sub => out.push({...sub, depthPrefix: "　↳ "})); });
+      return out;
+    },
+    get mainCategory() {
+      if (this.splitOpen && this.splitRows.length) return "";
+      const sel = this.selectedCats;
+      return sel.length === 1 ? sel[0].id : "";
+    },
+    get splitTotal() {
+      return this.splitRows.reduce((a, s) => a + (parseFloat(s.amount) || 0), 0).toFixed(2);
+    },
+    switchType(t) {
+      this.type = t;
+      this.selectedCats = [];
+      this.splitRows = [];
+      this.splitOpen = false;
+      document.querySelector('input[name="type"]').value = t;
+      this.$nextTick(() => document.getElementById("amount-input")?.focus());
+    },
+    get submitLabel() {
+      return {expense: "记支出", income: "记收入", transfer: "记转账", adjustment: "记调整", refund: "记退款", reimbursement: "记报销"}[this.type] || "保存";
+    },
+    cleanAmount() {
+      this.amount = (this.amount || "").replace(/[^\d.]/g, "");
+    },
+    get isMobile() {
+      return typeof window !== "undefined" && window.innerWidth < 768;
+    },
+    keyPress(k) {
+      if (k === "⌫") {
+        this.amount = (this.amount || "").slice(0, -1);
+        return;
+      }
+      if (k === ".") {
+        if ((this.amount || "").includes(".")) return;
+        if (this.amount === "" || this.amount === "0") this.amount = "0.";
+        else this.amount += ".";
+        return;
+      }
+      let cur = this.amount || "";
+      if (cur.includes(".")) {
+        const dec = cur.split(".")[1] || "";
+        if (dec.length >= 2) return;
+        cur += k;
+      } else if (cur === "0") {
+        cur = k;
+      } else {
+        cur += k;
+      }
+      this.amount = cur;
+    },
+    toggleCat(cat) {
+      const idx = this.selectedCats.findIndex(s => s.id === cat.id);
+      if (idx >= 0) this.selectedCats.splice(idx, 1);
+      else {
+        if (this.splitOpen && this.splitRows.length) this.splitRows.push({categoryId: cat.id, amount: ""});
+        else this.selectedCats = [cat];
+      }
+    },
+    init() {
+      document.querySelectorAll('input[name="type"]')[0] && (document.querySelector('input[name="type"]').value = this.type);
+      // 编辑模式下回填
+      const typeVal = document.querySelector('input[name="type"]')?.value;
+      if (typeVal && ["expense","income","transfer","adjustment"].includes(typeVal)) this.type = typeVal;
+      const hidden = document.querySelector('input[name="from_account"]');
+      if (hidden && hidden.value) this.account = parseInt(hidden.value);
+      if (state.splits && state.splits.length) {
+        this.splitOpen = true;
+        this.splitRows = state.splits;
+      }
+      document.getElementById("amount-input")?.focus();
+    },
+  };
+}
+</script>
+{% endblock %}
+{% block scripts %}
+<script>
+// 提交前回填隐藏字段与拆分 JSON
+document.addEventListener("submit", function (e) {
+  if (e.target.id !== "quick-form") return;
+  const app = document.querySelector("[x-data='quickAdd()']");
+  if (!app || !app._x_dataStack) return;
+  const d = app._x_dataStack[0];
+  const splitInput = document.querySelector('input[name="split_category_ids"]');
+  const amtInput = document.querySelector('input[name="split_amounts"]');
+  const validRows = d.splitRows.filter(s => s.categoryId && parseFloat(s.amount) > 0);
+  splitInput.value = validRows.map(s => s.categoryId).join(",");
+  amtInput.value = validRows.map(s => s.amount).join(",");
+  if (validRows.length) {
+    document.querySelector('input[name="category"]').value = "";
+  }
+  d.saving = true;
+});
+</script>
+{% endblock %}

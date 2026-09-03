@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}页面不存在 - 账巢{% endblock %}
+{% block content %}
+<div class="empty-state">
+  <span class="text-6xl">🧭</span>
+  <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300">页面不存在</h2>
+  <p class="text-sm">地址可能已失效，或你无权访问该账本。</p>
+  <a href="{% url 'ledgers:index' %}" class="btn-primary mt-3">回到首页</a>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}流水详情 - 账巢{% endblock %}
+{% block header_left %}<a href="{{ request.META.HTTP_REFERER|default:'/l/' }}" class="btn-ghost !px-2 !py-1">‹ 返回</a>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-md">
+  <div class="card mb-4 p-5 text-center">
+    <div class="text-3xl font-bold {% if txn.type == 'expense' %}text-red-500{% elif txn.type == 'income' %}text-green-600{% elif txn.type == 'refund' %}text-teal-600 dark:text-teal-400{% elif txn.type == 'reimbursement' %}text-blue-600 dark:text-blue-400{% else %}text-gray-700 dark:text-gray-200{% endif %}">
+      {% if txn.type == 'expense' %}-{% else %}+{% endif %}{{ txn.amount }} {{ txn.currency }}
+    </div>
+    <div class="mt-1 text-sm text-gray-400">{{ txn.get_type_display }} · {{ txn.date|date:"Y年m月d日" }}</div>
+  </div>
+
+  <div class="card mb-4 divide-y divide-gray-100 p-1 text-sm dark:divide-gray-800">
+    <div class="flex justify-between px-4 py-3"><span class="text-gray-400">账户</span><span>{{ txn.from_account.name|default:"—" }}{% if txn.to_account %} → {{ txn.to_account.name }}{% endif %}</span></div>
+    <div class="flex items-center justify-between px-4 py-3"><span class="text-gray-400">分类</span><span class="flex items-center gap-1.5">{% if txn.category %}<span class="flex h-6 w-6 items-center justify-center rounded-full text-xs {{ txn.category.icon|default:"▣"|icon_color }}">{{ txn.category.icon|default:"▣" }}</span>{{ txn.category.name }}{% else %}—{% endif %}</span></div>
+    {% if txn.counterparty %}<div class="flex justify-between px-4 py-3"><span class="text-gray-400">交易对象</span><span>{{ txn.counterparty }}</span></div>{% endif %}
+    {% if txn.description %}<div class="flex justify-between gap-4 px-4 py-3"><span class="shrink-0 text-gray-400">备注</span><span class="text-right">{{ txn.description }}</span></div>{% endif %}
+    <div class="flex justify-between px-4 py-3">
+      <span class="text-gray-400">标签</span>
+      <span>{% for tag in txn.tags.all %}<span class="badge mr-1 bg-gray-100 text-gray-600 dark:bg-gray-800">{{ tag.name }}</span>{% empty %}—{% endfor %}</span>
+    </div>
+    {% if txn.currency != ledger.base_currency %}<div class="flex justify-between px-4 py-3"><span class="text-gray-400">基础币金额</span><span>{{ txn.amount_base }} {{ ledger.base_currency }}（汇率 {{ txn.exchange_rate }}）</span></div>{% endif %}
+    {% if txn.created_by %}<div class="flex justify-between px-4 py-3"><span class="text-gray-400">记于</span><span>{{ txn.created_by.effective_display_name }} · {{ txn.created_at|date:"Y-m-d H:i" }}</span></div>{% endif %}
+    {% if txn.updated_by %}<div class="flex justify-between px-4 py-3"><span class="text-gray-400">最后修改</span><span>{{ txn.updated_by.effective_display_name }} · {{ txn.updated_at|date:"Y-m-d H:i" }}</span></div>{% endif %}
+  </div>
+
+  {% if txn.splits.all %}
+  <div class="card mb-4 p-4">
+    <h3 class="mb-2 text-sm font-semibold text-gray-500">拆分明细</h3>
+    <div class="space-y-1.5 text-sm">
+      {% for s in txn.splits.all %}
+      <div class="flex justify-between"><span>{{ s.category.name|default:"未分类" }}</span><span>{{ s.amount }} {{ txn.currency }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if membership_role <= 30 %}
+  <div class="grid grid-cols-2 gap-3">
+    <a href="{% url 'transactions:edit' ledger.pk txn.pk %}" class="btn-primary">编辑</a>
+    <form method="post" action="{% url 'transactions:duplicate' ledger.pk txn.pk %}" class="grid grid-cols-1">
+      {% csrf_token %}
+      <button class="btn-secondary">复制</button>
+    </form>
+    <form method="post" action="{% url 'transactions:delete' ledger.pk txn.pk %}" class="col-span-2" onsubmit="return confirm('确定删除这笔流水吗？可稍后恢复。')">
+      {% csrf_token %}
+      <button class="btn-danger w-full">删除</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}编辑{% else %}新增{% endif %}分类 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'transactions:categories' ledger.pk %}" class="text-xs text-gray-400">‹ 分类管理</a>
+  <h2 class="text-lg font-bold">{% if category %}编辑分类{% else %}新增分类{% endif %}</h2>
+</div>
+<form method="post" class="card space-y-3 p-4">
+  {% csrf_token %}
+  {% for field in form %}
+  <div>
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.name == "kind" %}
+    <select name="kind" id="{{ field.id_for_label }}" class="form-select">
+      {% for v, label in field.field.choices %}<option value="{{ v }}" {% if field.value == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    {% elif field.name == "parent" %}
+    <select name="parent" id="{{ field.id_for_label }}" class="form-select">
+      <option value="">（无父分类）</option>
+      {% for c in form.fields.parent.queryset %}<option value="{{ c.id }}" {% if field.value|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+    {% elif field.name == "icon" %}
+    <input type="hidden" name="icon" id="id_icon" value="{{ field.value|default:'' }}">
+    <div class="grid grid-cols-8 gap-1" id="icon-picker">
+      {% for icon in icon_set %}
+      <button type="button" data-icon="{{ icon }}" onclick="pickIcon(this)"
+        class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-lg dark:border-gray-700 {% if field.value == icon %}border-brand-500 bg-brand-50 dark:bg-brand-950{% endif %}">{{ icon }}</button>
+      {% endfor %}
+    </div>
+    <script>
+    function pickIcon(btn) {
+      document.getElementById("id_icon").value = btn.dataset.icon;
+      document.querySelectorAll("#icon-picker button").forEach(b => {
+        b.classList.remove("border-brand-500", "bg-brand-50", "dark:bg-brand-950");
+        b.classList.add("border-gray-200", "dark:border-gray-700");
+      });
+      btn.classList.add("border-brand-500", "bg-brand-50", "dark:bg-brand-950");
+      btn.classList.remove("border-gray-200", "dark:border-gray-700");
+    }
+    </script>
+    {% elif field.name == "is_active" %}
+    <label class="flex items-center gap-2"><input type="checkbox" name="is_active" class="h-5 w-5 accent-brand-600" {% if field.value %}checked{% endif %}> 启用</label>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.errors %}<p class="mt-1 text-sm text-red-500">{{ field.errors.0 }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% if form.non_field_errors %}<p class="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{{ form.non_field_errors.0 }}</p>{% endif %}
+  <div class="flex gap-3 pt-1">
+    <button type="submit" class="btn-primary flex-1">保存</button>
+    <a href="{% url 'transactions:categories' ledger.pk %}" class="btn-secondary">取消</a>
+  </div>
+</form>
+{% endblock %}

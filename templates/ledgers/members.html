@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}成员 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">成员管理</h2>
+  <p class="text-xs text-gray-400">{{ ledger.name }} · {{ members|length }} 名成员</p>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-2 text-sm font-semibold">创建邀请链接</h3>
+  <form method="post" action="{% url 'ledgers:invitation_create' ledger.pk %}" class="space-y-3">
+    {% csrf_token %}
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label">默认角色</label>
+        <select name="role" class="form-select">
+          <option value="20">管理员</option>
+          <option value="30" selected>编辑者</option>
+          <option value="40">只读</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">有效期（天）</label>
+        <input type="number" name="expires_in_days" value="7" min="1" max="90" class="form-input">
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label">限定用户名（可选）</label>
+        <input name="target_username" class="form-input" placeholder="不限定留空">
+      </div>
+      <div>
+        <label class="form-label">限定邮箱（可选）</label>
+        <input name="target_email" class="form-input" placeholder="不限定留空">
+      </div>
+    </div>
+    <button class="btn-primary w-full">生成邀请链接</button>
+  </form>
+
+  {% if invitations %}
+  <div class="mt-4 space-y-2">
+    <h4 class="text-xs font-medium text-gray-400">未使用的邀请</h4>
+    {% for inv in invitations %}
+    {% if inv.is_usable %}
+    <div class="flex items-center gap-2 rounded-xl border border-gray-200 p-2.5 dark:border-gray-700">
+      <div class="min-w-0 flex-1">
+        <div class="truncate text-xs text-gray-500">{{ request.build_absolute_uri }}{% url 'ledgers:invitation_accept' inv.token %}</div>
+        <div class="mt-0.5 text-xs text-gray-400">角色：{{ inv.get_role_display }} · 到期：{{ inv.expires_at|date:"m-d H:i" }} · 创建：{{ inv.created_by.effective_display_name }}</div>
+      </div>
+      <button onclick="navigator.clipboard.writeText('{{ request.build_absolute_uri }}{% url "ledgers:invitation_accept" inv.token %}'); this.textContent='已复制'" class="btn-secondary !min-h-[36px] !px-3 !py-1 text-xs">复制</button>
+      <form method="post" action="{% url 'ledgers:invitation_revoke' inv.pk %}">
+        {% csrf_token %}
+        <button class="btn-ghost !min-h-[36px] !px-2 !py-1 text-xs">撤销</button>
+      </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="space-y-2">
+  {% for m in members %}
+  <div class="card flex items-center gap-3 p-4">
+    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700 dark:bg-brand-900 dark:text-brand-300">{{ m.user.effective_display_name|slice:":1" }}</div>
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2">
+        <span class="truncate text-sm font-medium">{{ m.user.effective_display_name }}</span>
+        {% if m.user_id == ledger.owner_id %}<span class="badge bg-amber-100 text-amber-700">所有者</span>{% endif %}
+      </div>
+      <div class="text-xs text-gray-400">@{{ m.user.username }} · {{ m.joined_at|date:"Y-m-d" }} 加入{% if m.invited_by %} · 由 {{ m.invited_by.effective_display_name }} 邀请{% endif %}</div>
+    </div>
+    {% if m.user_id != ledger.owner_id and m.user_id != request.user.id %}
+    <form method="post" action="{% url 'ledgers:member_role' ledger.pk m.pk %}">
+      {% csrf_token %}
+      <select name="role" class="form-select !min-h-[36px] !py-1 text-xs" onchange="this.form.submit()">
+        {% for value, label in role_choices %}
+        <option value="{{ value }}" {% if m.role == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <form method="post" action="{% url 'ledgers:member_deactivate' ledger.pk m.pk %}" onsubmit="return confirm('停用该成员？其将失去本账本访问权限。')">
+      {% csrf_token %}
+      <button class="btn-ghost !min-h-[36px] !px-2 !py-1 text-xs">停用</button>
+    </form>
+    {% elif m.user_id == request.user.id %}
+    <span class="badge bg-gray-100 text-gray-500">我</span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if request.user.id == ledger.owner_id %}
+<div class="card mt-4 p-4">
+  <h3 class="mb-2 text-sm font-semibold text-gray-500">转移所有权</h3>
+  <p class="mb-2 text-xs text-gray-400">转移后你将变为管理员，原所有者不能转移给自己。</p>
+  <form method="post" action="{% url 'ledgers:owner_transfer' ledger.pk 0 %}" class="space-y-2" onsubmit="return confirm('确认转移账本所有权？')">
+    {% csrf_token %}
+    <select name="target_membership" class="form-select" required>
+      <option value="">选择新所有者…</option>
+      {% for m in members %}{% if m.user_id != ledger.owner_id %}
+      <option value="{{ m.pk }}">{{ m.user.effective_display_name }}</option>
+      {% endif %}{% endfor %}
+    </select>
+    <button class="btn-secondary w-full text-sm">转移所有权</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,4 @@
+{% load core_extras %}
+{% with icon=cat.icon|default:"▣" %}
+<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base {{ icon|icon_color }}">{{ icon }}</span>
+{% endwith %}

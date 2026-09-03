@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}流水日历 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-3 flex items-center justify-between">
+  <a href="{% url 'transactions:calendar' ledger.pk %}?month={{ prev_month.0 }}-{{ prev_month.1|stringformat:'02d' }}" class="btn-ghost !min-h-[40px] !px-3 !py-1 text-lg">‹</a>
+  <div class="text-center">
+    <span class="text-base font-bold">{{ year }}年{{ month }}月</span>
+    {% if not is_current %}<a href="{% url 'transactions:calendar' ledger.pk %}" class="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-600 dark:bg-brand-950 dark:text-brand-300">回本月</a>{% endif %}
+  </div>
+  <a href="{% url 'transactions:calendar' ledger.pk %}?month={{ next_month.0 }}-{{ next_month.1|stringformat:'02d' }}" class="btn-ghost !min-h-[40px] !px-3 !py-1 text-lg">›</a>
+</div>
+
+<div class="card mb-3 grid grid-cols-3 divide-x divide-gray-100 text-center dark:divide-gray-800">
+  <div class="py-2"><div class="text-xs text-gray-400">收入</div><div class="text-sm font-semibold text-green-600 dark:text-green-400">{{ totals.income }}</div></div>
+  <div class="py-2"><div class="text-xs text-gray-400">支出</div><div class="text-sm font-semibold text-red-500">{{ totals.expense }}</div></div>
+  <div class="py-2"><div class="text-xs text-gray-400">净额</div><div class="text-sm font-semibold">{{ totals.net }}</div></div>
+</div>
+
+<div class="card overflow-hidden p-2">
+  <div class="grid grid-cols-7 text-center text-xs text-gray-400">
+    {% for wd in weekdays %}<div class="py-1.5">{{ wd }}</div>{% endfor %}
+  </div>
+  {% for week in weeks %}
+  <div class="grid grid-cols-7">
+    {% for cell in week %}
+    {% if cell %}
+    <a href="{% url 'transactions:list' ledger.pk %}?date_from={{ cell.date|date:'Y-m-d' }}&date_to={{ cell.date|date:'Y-m-d' }}"
+      class="m-0.5 flex min-h-[56px] flex-col items-center rounded-lg px-1 py-1 {% if cell.is_today %}bg-brand-50 ring-1 ring-brand-500 dark:bg-brand-950{% else %}hover:bg-gray-50 dark:hover:bg-gray-800{% endif %}">
+      <span class="text-sm {% if cell.is_today %}font-bold text-brand-700 dark:text-brand-300{% else %}text-gray-600 dark:text-gray-300{% endif %}">{{ cell.day }}</span>
+      {% if cell.expense %}<span class="mt-0.5 max-w-full truncate text-[10px] text-red-500">{{ cell.expense }}</span>{% endif %}
+      {% if cell.income %}<span class="max-w-full truncate text-[10px] text-green-600 dark:text-green-400">{{ cell.income }}</span>{% endif %}
+    </a>
+    {% else %}
+    <div class="m-0.5 min-h-[56px]"></div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+<p class="mt-2 text-center text-xs text-gray-400">点击日期查看当日流水明细</p>
+{% endblock %}

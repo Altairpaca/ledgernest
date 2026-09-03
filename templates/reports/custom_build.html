@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}{% if instance %}编辑{% else %}新建{% endif %}自定义报表 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'reports:index' ledger.pk %}" class="text-xs text-gray-400">‹ 报表中心</a>
+  <h2 class="text-lg font-bold">{% if instance %}编辑报表「{{ instance.name }}」{% else %}自定义报表{% endif %}</h2>
+</div>
+
+<form method="post" class="space-y-3" id="report-form" x-data="reportBuilder()" x-init="init()">
+  {% csrf_token %}
+
+  <div class="card p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-gray-500">1. 基本信息</h3>
+    <div>
+      <label class="form-label">名称</label>
+      <input name="name" required maxlength="64" class="form-input" value="{{ instance.name|default:'' }}" placeholder="如：月度餐饮支出">
+    </div>
+    <div>
+      <label class="form-label">描述</label>
+      <input name="description" maxlength="255" class="form-input" value="{{ instance.description|default:'' }}" placeholder="可选">
+    </div>
+  </div>
+
+  <div class="card p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-gray-500">2. 日期范围</h3>
+    <div class="flex gap-2">
+      <label class="chip flex-1 justify-center" :class="drType === 'relative' && 'chip-active'">
+        <input type="radio" name="date_range_type" value="relative" class="hidden" x-model="drType" @change="onDrChange()"> 相对
+      </label>
+      <label class="chip flex-1 justify-center" :class="drType === 'absolute' && 'chip-active'">
+        <input type="radio" name="date_range_type" value="absolute" class="hidden" x-model="drType" @change="onDrChange()"> 固定日期
+      </label>
+    </div>
+    <div x-show="drType === 'relative'" class="grid grid-cols-2 gap-3">
+      <select name="rel_unit" class="form-select">
+        <option value="month" {% if not definition or definition.date_range.unit == 'month' %}selected{% endif %}>月</option>
+        <option value="year" {% if definition and definition.date_range.unit == 'year' %}selected{% endif %}>年</option>
+      </select>
+      <input type="number" name="rel_value" min="1" max="120" class="form-input" value="{{ definition.date_range.value|default:3 }}" {% if not definition or definition.date_range.type != 'relative' %}value="3"{% endif %}>
+    </div>
+    <div x-show="drType === 'absolute'" class="grid grid-cols-2 gap-3">
+      <input type="date" name="start" class="form-input" value="{{ definition.date_range.start|default:'' }}">
+      <input type="date" name="end" class="form-input" value="{{ definition.date_range.end|default:'' }}">
+    </div>
+  </div>
+
+  <div class="card p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-gray-500">3. 筛选条件（可多选）</h3>
+    <div>
+      <label class="form-label">流水类型</label>
+      <div class="flex flex-wrap gap-2">
+        {% for v, label in types_choices %}
+        <label class="chip" :class="types.includes('{{ v }}') && 'chip-active'">
+          <input type="checkbox" name="types" value="{{ v }}" class="hidden" x-model="types" x-on:change="types = types.filter(t => t !== '{{ v }}').concat('{{ v }}')" {% if definition and v in definition.types %}checked{% endif %}> {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label class="form-label">账户</label>
+      <div class="flex flex-wrap gap-2">
+        {% for a in accounts %}
+        <label class="chip" :class="accountsSel.includes('{{ a.id }}') && 'chip-active'">
+          <input type="checkbox" name="account_ids" value="{{ a.id }}" class="hidden" {% if definition and a.id in definition.account_ids %}checked{% endif %}> {{ a.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label class="form-label">分类</label>
+      <div class="flex flex-wrap gap-2">
+        {% for c in categories %}
+        <label class="chip" :class="catsSel.includes('{{ c.id }}') && 'chip-active'">
+          <input type="checkbox" name="category_ids" value="{{ c.id }}" class="hidden" {% if definition and c.id in definition.category_ids %}checked{% endif %}> {{ c.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label class="form-label">标签</label>
+      <div class="flex flex-wrap gap-2">
+        {% for t in tags %}
+        <label class="chip" :class="tagsSel.includes('{{ t.id }}') && 'chip-active'">
+          <input type="checkbox" name="tag_ids" value="{{ t.id }}" class="hidden" {% if definition and t.id in definition.tag_ids %}checked{% endif %}> {{ t.name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <label class="form-label">成员</label>
+      <div class="flex flex-wrap gap-2">
+        {% for m in members %}
+        <label class="chip" :class="membersSel.includes('{{ m.user.id }}') && 'chip-active'">
+          <input type="checkbox" name="member_ids" value="{{ m.user.id }}" class="hidden" {% if definition and m.user.id in definition.member_ids %}checked{% endif %}> {{ m.user.effective_display_name }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card p-4 space-y-3">
+    <h3 class="text-sm font-semibold text-gray-500">4. 分组、指标与展示</h3>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label">分组维度</label>
+        <select name="group_by" class="form-select">
+          {% for v, label in spec.group_by_choices %}<option value="{{ v }}" {% if definition and definition.group_by == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">聚合指标</label>
+        <select name="metric" class="form-select">
+          {% for v, label in spec.metric_choices %}<option value="{{ v }}" {% if definition and definition.metric == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">排序</label>
+        <select name="sort" class="form-select">
+          {% for v, label in spec.sort_choices %}<option value="{{ v }}" {% if definition and definition.sort == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">图表类型</label>
+        <select name="chart" class="form-select">
+          {% for v, label in spec.chart_choices %}<option value="{{ v }}" {% if definition and definition.chart == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="form-label">结果行数上限（1-200）</label>
+      <input type="number" name="limit" min="1" max="200" class="form-input" value="{{ definition.limit|default:50 }}">
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="is_shared" class="h-5 w-5 accent-brand-600" {% if instance is None or instance.is_shared %}checked{% endif %}> 共享给账本所有成员
+    </label>
+  </div>
+
+  <button type="submit" class="btn-primary w-full">保存报表</button>
+</form>
+
+{% if preview %}
+<div class="card mt-4 overflow-hidden">
+  <div class="border-b border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium dark:border-gray-800 dark:bg-gray-800/50">预览（最近 {{ preview.rows|length }} 行）</div>
+  {% if preview.rows %}
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in preview.rows %}
+    <div class="flex justify-between px-4 py-2 text-sm">
+      <span class="truncate text-gray-600 dark:text-gray-300">{{ r.label }}</span>
+      <span class="font-medium">{{ r.value }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state !py-8"><p>范围内没有数据</p></div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function reportBuilder() {
+  return {
+    drType: "relative",
+    types: [],
+    accountsSel: [],
+    catsSel: [],
+    tagsSel: [],
+    membersSel: [],
+    init() {
+      const checked = (name) => Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(i => i.value);
+      this.types = checked("types");
+      this.accountsSel = checked("account_ids");
+      this.catsSel = checked("category_ids");
+      this.tagsSel = checked("tag_ids");
+      this.membersSel = checked("member_ids");
+      this.drType = document.querySelector('input[name="date_range_type"]:checked')?.value || "relative";
+    },
+    onDrChange() {},
+  };
+}
+</script>
+{% endblock %}

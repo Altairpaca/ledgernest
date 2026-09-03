@@ -1,0 +1,24 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="zh-hans" class="{% if request.COOKIES.ln_theme %}{{ request.COOKIES.ln_theme }}{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}账巢 LedgerNest{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/app.js"></script>
+</head>
+<body class="bg-brand-50 dark:bg-gray-950">
+  <div class="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
+    <div class="mb-8 text-center">
+      <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-600 text-4xl font-bold text-white shadow-lg shadow-brand-600/30">巢</div>
+      <h1 class="text-2xl font-bold">账巢 LedgerNest</h1>
+      <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">多用户协作记账 · 移动端优先</p>
+    </div>
+    {% include "core/_messages.html" %}
+    {% block content %}{% endblock %}
+    <p class="mt-8 text-center text-xs text-gray-400">自部署 · Tailnet 内部使用</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{% extends "auth_base.html" %}
+{% block title %}注册未开放 - 账巢{% endblock %}
+{% block content %}
+<div class="card p-6 text-center">
+  <p class="mb-3 text-4xl">🔒</p>
+  <h2 class="mb-2 text-lg font-semibold">注册未开放</h2>
+  <p class="text-sm text-gray-500">管理员未开放自助注册。请联系管理员创建账号，或使用已有账号<a href="{% url 'accounts:login' %}" class="text-brand-600">登录</a>。</p>
+</div>
+{% endblock %}

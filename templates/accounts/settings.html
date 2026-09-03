@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}个人设置 - 账巢{% endblock %}
+{% block header_left %}<a href="{% url 'ledgers:index' %}" class="btn-ghost !px-2 !py-1">‹ 返回</a>{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">个人设置</h2>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-3 text-sm font-semibold text-gray-500">资料</h3>
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label class="form-label">用户名</label>
+      <input class="form-input bg-gray-100 dark:bg-gray-800" value="{{ user.username }}" disabled>
+    </div>
+    <div>
+      <label class="form-label">邮箱</label>
+      <input class="form-input bg-gray-100 dark:bg-gray-800" value="{{ user.email|default:'未设置' }}" disabled>
+    </div>
+    <div>
+      <label class="form-label">显示名称</label>
+      <input name="display_name" maxlength="64" class="form-input" value="{{ user.display_name }}" placeholder="显示给其他成员的名字">
+    </div>
+    <div class="grid grid-cols-1 gap-3">
+      <div>
+        <label class="form-label">语言</label>
+        <select name="locale" class="form-select">
+          {% for v, label in locale_choices %}<option value="{{ v }}" {% if user.locale == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">时区</label>
+        <select name="timezone" class="form-select">
+          {% for tz in tz_choices %}<option value="{{ tz }}" {% if user.timezone == tz %}selected{% endif %}>{{ tz }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary w-full">保存设置</button>
+  </form>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-3 text-sm font-semibold text-gray-500">外观</h3>
+  <div class="flex gap-2">
+    <button onclick="LNTheme.set('light')" class="btn-secondary flex-1">☀️ 浅色</button>
+    <button onclick="LNTheme.set('dark')" class="btn-secondary flex-1">🌙 深色</button>
+    <button onclick="LNTheme.set('')" class="btn-secondary flex-1">🖥 跟随系统</button>
+  </div>
+</div>
+
+<div class="card p-4">
+  <h3 class="mb-3 text-sm font-semibold text-gray-500">安全</h3>
+  <a href="{% url 'accounts:password_change' %}" class="btn-secondary w-full">修改密码</a>
+</div>
+
+<div class="card mt-4 p-4">
+  <h3 class="mb-3 text-sm font-semibold text-gray-500">我的账本</h3>
+  <a href="{% url 'ledgers:list' %}" class="btn-secondary w-full">管理账本（切换 / 创建 / 归档）</a>
+</div>
+
+{% if user.is_staff %}
+<div class="card mt-4 p-4">
+  <h3 class="mb-3 text-sm font-semibold text-gray-500">管理员</h3>
+  <a href="{% url 'accounts:admin_create_user' %}" class="btn-secondary w-full">创建用户</a>
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'accounts:logout' %}" class="mt-4">
+  {% csrf_token %}
+  <button class="btn-danger w-full">退出登录</button>
+</form>
+{% endblock %}

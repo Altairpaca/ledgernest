@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}无权限 - 账巢{% endblock %}
+{% block content %}
+<div class="empty-state">
+  <span class="text-6xl">🔒</span>
+  <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300">没有权限</h2>
+  <p class="max-w-sm text-sm">你无权执行此操作，或该账本未向你开放。</p>
+  <a href="{% url 'ledgers:list' %}" class="btn-primary mt-3">返回账本列表</a>
+</div>
+{% endblock %}

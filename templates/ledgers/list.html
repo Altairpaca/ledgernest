@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}账本 - 账巢{% endblock %}
+{% block header_left %}<a href="{% url 'accounts:settings' %}" class="btn-ghost !px-2 !py-1">☰</a>{% endblock %}
+{% block header_right %}<a href="{% url 'accounts:logout' %}" class="text-sm text-gray-400">退出</a>{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <h2 class="text-lg font-bold">我的账本</h2>
+  <button onclick="document.getElementById('create-ledger').classList.toggle('hidden')" class="btn-primary !min-h-[40px] !px-3 !py-1.5 text-sm">＋ 新建账本</button>
+</div>
+
+<div id="create-ledger" class="card mb-4 hidden p-4">
+  <form method="post" action="{% url 'ledgers:create' %}" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label class="form-label">账本名称</label>
+      <input name="name" required maxlength="64" class="form-input" placeholder="例如：家庭账本">
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label">描述</label>
+        <input name="description" maxlength="255" class="form-input" placeholder="可选">
+      </div>
+      <div>
+        <label class="form-label">基础货币</label>
+        <select name="base_currency" class="form-select">
+          <option value="CNY">CNY</option><option value="USD">USD</option><option value="EUR">EUR</option>
+          <option value="JPY">JPY</option><option value="HKD">HKD</option><option value="TWD">TWD</option>
+          <option value="SGD">SGD</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn-primary w-full">创建账本</button>
+  </form>
+</div>
+
+{% if active %}
+<div class="space-y-2">
+  {% for m in active %}
+  <a href="{% url 'ledgers:dashboard' m.ledger.pk %}" class="card flex items-center gap-3 p-4 transition-colors active:bg-gray-50 dark:active:bg-gray-800">
+    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-lg font-bold text-brand-700 dark:bg-brand-900 dark:text-brand-300">{{ m.ledger.name|slice:":1" }}</div>
+    <div class="min-w-0 flex-1">
+      <div class="truncate font-medium">{{ m.ledger.name }}</div>
+      <div class="truncate text-xs text-gray-400">{{ m.ledger.description|default:"无描述" }} · {{ m.ledger.base_currency }}</div>
+    </div>
+    <span class="badge {% if m.role == 10 %}bg-amber-100 text-amber-700{% elif m.role == 20 %}bg-blue-100 text-blue-700{% elif m.role == 30 %}bg-gray-100 text-gray-600{% else %}bg-gray-100 text-gray-500{% endif %}">{{ m.get_role_display }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="text-4xl">📒</span>
+  <p>还没有账本</p>
+  <p class="text-sm">点击右上角「新建账本」开始记账，或使用管理员发来的邀请链接加入共享账本。</p>
+</div>
+{% endif %}
+
+{% if archived %}
+<h3 class="mb-2 mt-6 text-sm font-medium text-gray-400">已归档</h3>
+<div class="space-y-2 opacity-70">
+  {% for m in archived %}
+  <div class="card flex items-center gap-3 p-4">
+    <div class="min-w-0 flex-1">
+      <div class="font-medium">{{ m.ledger.name }}</div>
+      <div class="text-xs text-gray-400">已归档</div>
+    </div>
+    <form method="post" action="{% url 'ledgers:unarchive' m.ledger.pk %}">
+      {% csrf_token %}
+      <button class="btn-secondary !min-h-[36px] !px-3 !py-1 text-xs">恢复</button>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

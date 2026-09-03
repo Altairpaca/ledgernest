@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}{{ ledger.name }} - 账巢{% endblock %}
+{% block header_left %}
+<div class="relative">
+  <button onclick="document.getElementById('ledger-switcher').classList.toggle('hidden')" class="btn-ghost !px-2 !py-1 text-lg">☰</button>
+  <div id="ledger-switcher" class="card absolute left-0 top-10 z-40 hidden w-64 p-2 text-left text-sm shadow-lg">
+    <div class="px-3 py-1.5 text-xs text-gray-400">切换账本</div>
+    {% for m in my_ledgers %}
+    <a href="{% url 'ledgers:dashboard' m.ledger.pk %}" class="block rounded-lg px-3 py-2 {% if m.ledger.pk == ledger.pk %}bg-brand-50 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300{% else %}hover:bg-gray-100 dark:hover:bg-gray-800{% endif %}">
+      {{ m.ledger.name }} <span class="text-xs text-gray-400">{{ m.get_role_display }}</span>
+    </a>
+    {% endfor %}
+    <a href="{% url 'ledgers:list' %}" class="mt-1 block rounded-lg border-t border-gray-100 px-3 py-2 text-brand-600 dark:border-gray-800">管理账本…</a>
+  </div>
+</div>
+{% endblock %}
+{% block header_right %}
+<a href="{% url 'ledgers:settings' ledger.pk %}" class="text-sm text-gray-400">⚙</a>
+{% endblock %}
+{% block content %}
+
+<!-- 月份切换 -->
+<div class="mb-3 flex items-center justify-between">
+  <a href="?month={{ prev_month.0 }}-{{ prev_month.1|stringformat:'02d' }}" class="btn-ghost !min-h-[40px] !px-3 !py-1 text-lg">‹</a>
+  <div class="text-center">
+    <span class="text-base font-bold">{{ year }}年{{ month }}月</span>
+    {% if not is_current %}<a href="{% url 'ledgers:dashboard' ledger.pk %}" class="ml-2 rounded-full bg-brand-50 px-2 py-0.5 text-xs text-brand-600 dark:bg-brand-950 dark:text-brand-300">回本月</a>{% endif %}
+  </div>
+  <a href="?month={{ next_month.0 }}-{{ next_month.1|stringformat:'02d' }}" class="btn-ghost !min-h-[40px] !px-3 !py-1 text-lg">›</a>
+</div>
+
+<!-- 本月收支 -->
+<div class="card mb-3 overflow-hidden">
+  <div class="grid grid-cols-4 divide-x divide-gray-100 dark:divide-gray-800">
+    <div class="px-2 py-3.5 text-center">
+      <div class="text-xs text-gray-400">收入{% if pct_income is not None %}<span class="ml-0.5 text-[10px] {% if pct_income >= 0 %}text-green-500{% else %}text-red-400{% endif %}">{{ pct_income|floatformat:0 }}%</span>{% endif %}</div>
+      <div class="mt-0.5 truncate text-sm font-semibold text-green-600 dark:text-green-400">{{ this.income }}</div>
+    </div>
+    <div class="px-2 py-3.5 text-center">
+      <div class="text-xs text-gray-400">支出{% if pct_expense is not None %}<span class="ml-0.5 text-[10px] {% if pct_expense > 0 %}text-red-400{% else %}text-green-500{% endif %}">{{ pct_expense|floatformat:0 }}%</span>{% endif %}</div>
+      <div class="mt-0.5 truncate text-sm font-semibold text-red-500">{{ this.expense }}</div>
+    </div>
+    <div class="px-2 py-3.5 text-center">
+      <div class="text-xs text-gray-400">退款报销{% if pct_refund is not None %}<span class="ml-0.5 text-[10px] {% if pct_refund >= 0 %}text-teal-500{% else %}text-gray-400{% endif %}">{{ pct_refund|floatformat:0 }}%</span>{% endif %}</div>
+      <div class="mt-0.5 truncate text-sm font-semibold text-teal-600 dark:text-teal-400">{{ this.refund_total }}</div>
+    </div>
+    <div class="px-2 py-3.5 text-center">
+      <div class="text-xs text-gray-400">净额</div>
+      <div class="mt-0.5 truncate text-sm font-semibold">{{ this.net }}</div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between border-t border-gray-100 bg-gray-50/60 px-3 py-2 dark:border-gray-800 dark:bg-gray-800/30">
+    <span class="text-xs text-gray-400">总余额</span>
+    <span class="text-sm font-bold">{{ total_balance }} {{ ledger.base_currency }}</span>
+  </div>
+</div>
+
+<!-- 预算概览 -->
+{% if budgets %}
+<div class="card mb-3 p-4">
+  <div class="mb-2 flex items-center justify-between">
+    <h3 class="text-sm font-semibold">本月预算</h3>
+    <a href="{% url 'transactions:budgets' ledger.pk %}" class="text-xs text-brand-600">全部 →</a>
+  </div>
+  <div class="space-y-2.5">
+    {% for b in budgets|slice:":3" %}
+    <div>
+      <div class="mb-1 flex justify-between text-xs">
+        <span class="text-gray-500">{{ b.label }}</span>
+        <span class="{% if b.percent > 100 %}text-red-500{% elif b.percent > 80 %}text-amber-500{% else %}text-gray-400{% endif %}">{{ b.spent }} / {{ b.amount }}</span>
+      </div>
+      <div class="h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+        <div class="h-full rounded-full {% if b.percent > 100 %}bg-red-500{% elif b.percent > 80 %}bg-amber-500{% else %}bg-brand-500{% endif %}" style="width: {{ b.percent|floatformat:1 }}%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- 近 6 个月趋势 -->
+<div class="card mb-3 p-4">
+  <h3 class="mb-2 text-sm font-semibold">近 6 个月收支趋势</h3>
+  <div id="trend-chart" class="h-52 w-full" data-chart='{"labels": [{% for r in trend %}"{{ r.label }}"{% if not forloop.last %},{% endif %}{% endfor %}], "series": [{"name": "收入", "data": [{% for r in trend %}{{ r.income }}{% if not forloop.last %},{% endif %}{% endfor %}]}, {"name": "支出", "data": [{% for r in trend %}{{ r.expense }}{% if not forloop.last %},{% endif %}{% endfor %}]}]}' data-chart-type="bar"></div>
+</div>
+
+<!-- 支出分类排行 -->
+{% if expense_items %}
+<div class="card mb-3 p-4">
+  <div class="mb-2 flex items-center justify-between">
+    <h3 class="text-sm font-semibold">本月支出分类</h3>
+    <span class="text-xs text-gray-400">共 {{ expense_total }}</span>
+  </div>
+  <div id="expense-chart" class="h-44 w-full" data-chart='{"labels": [{% for r in expense_items %}"{{ r.name }}"{% if not forloop.last %},{% endif %}{% endfor %}], "series": [{"name": "支出", "data": [{% for r in expense_items %}{{ r.total }}{% if not forloop.last %},{% endif %}{% endfor %}]}]}' data-chart-type="pie"></div>
+  <div class="mt-1 space-y-1">
+    {% for r in expense_items %}
+    <div class="flex items-center justify-between text-xs">
+      <span class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300"><span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px] {{ r.icon|default:"▣"|icon_color }}">{{ r.icon|default:"▣" }}</span> {{ r.name }}</span>
+      <span>{{ r.total }} <span class="text-gray-400">({{ r.percent|floatformat:0 }}%)</span></span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<!-- 账户资产分布 -->
+<div class="card mb-3 p-4">
+  <div class="mb-2 flex items-center justify-between">
+    <h3 class="text-sm font-semibold">账户资产</h3>
+    <a href="{% url 'transactions:accounts' ledger.pk %}" class="text-xs text-brand-600">管理 →</a>
+  </div>
+  <div class="flex items-center gap-3">
+    <div id="assets-chart" class="h-36 w-36 shrink-0" data-chart='{{ assets_chart_json|safe }}' data-chart-type="pie"></div>
+    <div class="min-w-0 flex-1 space-y-1.5">
+      {% for item in balances %}
+      <div class="flex items-center justify-between gap-2 text-sm">
+        <span class="flex min-w-0 items-center gap-1.5 text-gray-600 dark:text-gray-300">
+          <span class="h-2 w-2 shrink-0 rounded-full" style="background: {{ item.color }}"></span>
+          <span class="truncate">{{ item.account.name }}</span>
+        </span>
+        <span class="font-medium {% if item.balance < 0 %}text-red-500{% endif %}">{{ item.balance }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- 最近流水 -->
+<div class="card p-4">
+  <div class="mb-2 flex items-center justify-between">
+    <h3 class="text-sm font-semibold">最近流水</h3>
+    <a href="{% url 'transactions:list' ledger.pk %}" class="text-xs text-brand-600">全部 →</a>
+  </div>
+  {% if recent %}
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for txn in recent %}
+    <a href="{% url 'transactions:detail' ledger.pk txn.pk %}" class="flex items-center gap-3 py-2.5">
+      <span class="w-10 shrink-0 text-xs text-gray-400">{{ txn.date|date:"m-d" }}</span>
+      <span class="min-w-0 flex-1 truncate text-sm">{{ txn.description|default:txn.get_type_display }}</span>
+      <span class="text-xs text-gray-400">{{ txn.category.name|default:"未分类" }}</span>
+      <span class="text-sm font-medium {% if txn.type == 'expense' %}text-red-500{% elif txn.type == 'income' %}text-green-600{% elif txn.type == 'refund' %}text-teal-600 dark:text-teal-400{% elif txn.type == 'reimbursement' %}text-blue-600 dark:text-blue-400{% endif %}">
+        {% if txn.type == 'expense' %}-{% else %}+{% endif %}{{ txn.amount }}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state !py-8">
+    <span class="text-3xl">📒</span>
+    <p>这个月还没有流水</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mt-4 grid grid-cols-2 gap-3">
+  <a href="{% url 'reports:index' ledger.pk %}" class="btn-secondary">📊 报表中心</a>
+  <a href="{% url 'imports:import' ledger.pk %}" class="btn-secondary">📥 导入流水</a>
+</div>
+{% endblock %}

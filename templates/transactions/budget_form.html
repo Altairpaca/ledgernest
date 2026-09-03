@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{% if budget %}编辑{% else %}新增{% endif %}预算 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'transactions:budgets' ledger.pk %}" class="text-xs text-gray-400">‹ 预算管理</a>
+  <h2 class="text-lg font-bold">{% if budget %}编辑预算{% else %}新增预算{% endif %}</h2>
+</div>
+<form method="post" class="card space-y-3 p-4">
+  {% csrf_token %}
+  {% for field in form %}
+  <div>
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.name == "budget_type" %}
+    <select name="budget_type" id="{{ field.id_for_label }}" class="form-select" onchange="document.getElementById('id_category_wrap').style.display = this.value === 'total' ? 'none' : 'block'">
+      {% for v, label in field.field.choices %}<option value="{{ v }}" {% if field.value == v %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    {% elif field.name == "category" %}
+    <div id="id_category_wrap" {% if form.budget_type.value == 'total' %}style="display:none"{% endif %}>
+      <select name="category" id="{{ field.id_for_label }}" class="form-select">
+        <option value="">（选择支出分类）</option>
+        {% for c in form.fields.category.queryset %}<option value="{{ c.id }}" {% if field.value|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.errors %}<p class="mt-1 text-sm text-red-500">{{ field.errors.0 }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  <div class="flex gap-3 pt-1">
+    <button type="submit" class="btn-primary flex-1">保存</button>
+    <a href="{% url 'transactions:budgets' ledger.pk %}" class="btn-secondary">取消</a>
+  </div>
+</form>
+{% endblock %}
