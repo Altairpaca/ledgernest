@@ -1,0 +1,38 @@
+{% extends "reports/_report_base.html" %}
+{% load core_extras %}
+{% block report_params %}
+<div class="mb-3 grid grid-cols-3 gap-2">
+  <a href="{% url 'reports:builtin' ledger.pk 'category' %}?kind={{ kind }}&start={{ prev_month_start }}&end={{ prev_month_end }}" class="btn-ghost !min-h-[40px] !px-2 !py-1 text-center text-lg">‹</a>
+  <div class="flex items-center justify-center text-sm text-gray-500">{{ start|date:"Y-m-d" }} ~ {{ end|date:"Y-m-d" }}</div>
+  <a href="{% url 'reports:builtin' ledger.pk 'category' %}?kind={{ kind }}&start={{ next_month_start }}&end={{ next_month_end }}" class="btn-ghost !min-h-[40px] !px-2 !py-1 text-center text-lg">›</a>
+</div>
+<form method="get" class="mb-3 grid grid-cols-2 gap-2">
+  <input type="date" name="start" class="form-input !min-h-[40px] !py-1.5 text-sm" value="{{ start|date:'Y-m-d' }}">
+  <div class="flex gap-2">
+    <input type="date" name="end" class="form-input !min-h-[40px] !py-1.5 text-sm" value="{{ end|date:'Y-m-d' }}">
+    <select name="kind" class="form-select !min-h-[40px] !py-1.5 text-sm" onchange="this.form.submit()">
+      <option value="expense" {% if kind == 'expense' %}selected{% endif %}>支出</option>
+      <option value="income" {% if kind == 'income' %}selected{% endif %}>收入</option>
+    </select>
+  </div>
+</form>
+{% endblock %}
+{% block report_table %}
+<div class="card overflow-hidden">
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in items %}
+    <a href="{% url 'transactions:list' ledger.pk %}?category={{ r.category.pk }}&date_from={{ start|date:'Y-m-d' }}&date_to={{ end|date:'Y-m-d' }}"
+      class="flex items-center gap-3 px-4 py-2.5 text-sm active:bg-gray-50 dark:active:bg-gray-800">
+      <span class="flex h-7 w-7 items-center justify-center rounded-full {{ r.icon|default:"▣"|icon_color }}">{{ r.icon|default:"▣" }}</span>
+      <span class="flex-1 text-gray-600 dark:text-gray-300">{{ r.name }}</span>
+      <span class="text-gray-400 text-xs">{{ r.percent|floatformat:0 }}%</span>
+      <span class="font-medium">{{ r.total }}</span>
+      <span class="text-gray-300">›</span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="flex justify-between border-t border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-800/50">
+    <span>合计</span><span>{{ total }}</span>
+  </div>
+</div>
+{% endblock %}

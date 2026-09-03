@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}导入结果 - 账巢{% endblock %}
+{% block content %}
+<div class="card mb-4 p-5 text-center">
+  <div class="mb-2 text-5xl">{% if result.created %}🎉{% else %}😐{% endif %}</div>
+  <h2 class="text-lg font-bold">导入完成</h2>
+  <p class="mt-1 text-sm text-gray-500">
+    共 {{ result.total }} 行 · 成功导入 <span class="font-medium text-green-600">{{ result.created }}</span> 条
+    {% if result.skipped_duplicates %}· 重复跳过 <span class="font-medium text-amber-500">{{ result.skipped_duplicates }}</span>{% endif %}
+    · 错误 <span class="font-medium text-red-500">{{ result.errors|length }}</span> 条
+  </p>
+</div>
+
+{% if errors %}
+<div class="card mb-4 overflow-hidden">
+  <div class="border-b border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium dark:border-gray-800 dark:bg-gray-800/50">错误明细（前 50 条）</div>
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for e in errors %}
+    <div class="flex items-start gap-2 px-4 py-2 text-sm">
+      <span class="shrink-0 text-red-500">✕</span>
+      <span class="text-gray-500"><span class="font-medium text-red-400">第 {{ e.row_number }} 行</span>：{{ e.error }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-2 gap-3">
+  <a href="{% url 'transactions:list' ledger.pk %}" class="btn-primary">查看流水</a>
+  <a href="{% url 'imports:import' ledger.pk %}" class="btn-secondary">继续导入</a>
+</div>
+{% endblock %}

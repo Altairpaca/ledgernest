@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}导入预览 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">导入预览</h2>
+  <p class="text-sm text-gray-500">
+    共 {{ total }} 行：<span class="font-medium text-green-600">有效 {{ valid_count }}</span> · <span class="font-medium text-red-500">错误 {{ error_count }}</span>
+  </p>
+  <p class="mt-1 text-xs text-gray-400">确认后将仅导入有效行，错误行跳过（策略：部分导入）。</p>
+</div>
+
+<div class="card overflow-hidden">
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in preview %}
+    <div class="px-4 py-2.5 text-sm">
+      {% if r.error %}
+      <div class="flex items-start gap-2">
+        <span class="mt-0.5 shrink-0 text-red-500">✕</span>
+        <div>
+          <span class="font-medium text-red-500">第 {{ r.row_number }} 行</span>
+          <span class="text-red-400">：{{ r.error }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="flex items-center gap-2">
+        <span class="shrink-0 text-green-600">✓</span>
+        <span class="truncate text-gray-600 dark:text-gray-300">{{ r.data.date|date:"Y-m-d" }} {{ r.data.type }} {{ r.data.amount }} {{ r.data.currency }}</span>
+        <span class="ml-auto shrink-0 text-xs text-gray-400">{{ r.data.from_account.name|default:"" }}{% if r.data.to_account %}→{{ r.data.to_account.name }}{% endif %}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="empty-state !py-10"><p>没有可预览的数据</p></div>
+    {% endfor %}
+  </div>
+</div>
+{% if total > preview|length %}
+<p class="mt-2 text-center text-xs text-gray-400">仅展示前 {{ preview|length }} 行</p>
+{% endif %}
+
+<form method="post" action="{% url 'imports:confirm' ledger.pk %}" class="mt-4 grid grid-cols-2 gap-3">
+  {% csrf_token %}
+  <button type="submit" class="btn-primary" {% if valid_count == 0 %}disabled{% endif %}>确认导入 {{ valid_count }} 行</button>
+  <a href="{% url 'imports:import' ledger.pk %}" class="btn-secondary">取消</a>
+</form>
+{% endblock %}

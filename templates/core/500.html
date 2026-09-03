@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}服务器错误 - 账巢{% endblock %}
+{% block content %}
+<div class="empty-state">
+  <span class="text-6xl">⚠️</span>
+  <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300">出错了</h2>
+  <p class="max-w-sm text-sm">服务器内部错误。请稍后重试，若持续出现请联系管理员查看日志。</p>
+  <a href="{% url 'ledgers:index' %}" class="btn-primary mt-3">回到首页</a>
+</div>
+{% endblock %}

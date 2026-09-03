@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100;
+    overscroll-behavior-y: none;
+  }
+  input, select, textarea {
+    font-size: 16px; /* 防止 iOS/Android 自动缩放 */
+  }
+  /* 桌面放大字号，表单输入保持 ≥16px 防缩放 */
+  @media (min-width: 768px) {
+    input, select, textarea { font-size: 0.875rem; }
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors select-none cursor-pointer disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white active:bg-brand-700 hover:bg-brand-700;
+  }
+  .btn-secondary {
+    @apply btn border border-gray-300 bg-white text-gray-700 active:bg-gray-100 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:active:bg-gray-800;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 bg-red-50 text-red-600 active:bg-red-100 hover:bg-red-100 dark:border-red-900 dark:bg-red-950 dark:text-red-400;
+  }
+  .btn-ghost {
+    @apply btn text-gray-600 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800;
+  }
+  .card {
+    @apply rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900;
+  }
+  .form-label {
+    @apply mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300;
+  }
+  .form-input {
+    @apply w-full min-h-[44px] rounded-xl border border-gray-300 bg-white px-3 py-2 text-base text-gray-900 placeholder-gray-400 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500;
+  }
+  .form-select {
+    @apply form-input appearance-none pr-8 bg-no-repeat bg-[right_0.75rem_center];
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 3.5L11.5 6' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
+  .chip {
+    @apply inline-flex min-h-[40px] cursor-pointer items-center gap-1 rounded-full border px-3.5 py-1.5 text-sm transition-colors;
+  }
+  .chip-active {
+    @apply border-brand-600 bg-brand-600 text-white;
+  }
+  .nav-active {
+    @apply text-brand-600 dark:text-brand-400;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+  .table-cell {
+    @apply px-3 py-2.5 text-sm;
+  }
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-2 py-14 text-center text-gray-400 dark:text-gray-500;
+  }
+}
+
+/* 底部导航安全区适配 */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

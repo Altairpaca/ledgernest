@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}邀请无效 - 账巢{% endblock %}
+{% block content %}
+<div class="empty-state">
+  <span class="text-6xl">📩</span>
+  <h2 class="text-lg font-semibold text-gray-600 dark:text-gray-300">邀请无法使用</h2>
+  <p class="max-w-sm text-sm">{{ reason|default:"邀请不存在、已过期或已被使用。" }}</p>
+  <a href="{% url 'ledgers:list' %}" class="btn-primary mt-3">返回账本列表</a>
+</div>
+{% endblock %}

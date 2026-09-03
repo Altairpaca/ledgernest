@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}账本设置 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">账本设置</h2>
+</div>
+
+<div class="card mb-4 p-4">
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label class="form-label">名称</label>
+      <input name="name" class="form-input" value="{{ ledger.name }}" required maxlength="64">
+    </div>
+    <div>
+      <label class="form-label">描述</label>
+      <input name="description" class="form-input" value="{{ ledger.description }}" maxlength="255">
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="form-label">基础货币</label>
+        <select name="base_currency" class="form-select">
+          {% for c in currency_choices %}<option value="{{ c }}" {% if ledger.base_currency == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">财年起始月份</label>
+        <select name="fiscal_year_start_month" class="form-select">
+          {% for m in months %}<option value="{{ m }}" {% if ledger.fiscal_year_start_month == m %}selected{% endif %}>{{ m }} 月</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="form-label">时区</label>
+      <select name="timezone" class="form-select">
+        {% for tz in tz_choices %}<option value="{{ tz }}" {% if ledger.timezone == tz %}selected{% endif %}>{{ tz }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary w-full">保存</button>
+  </form>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-2 text-sm font-semibold text-gray-500">成员与权限</h3>
+  <a href="{% url 'ledgers:members' ledger.pk %}" class="btn-secondary w-full">管理成员与邀请</a>
+</div>
+
+<div class="card p-4">
+  <h3 class="mb-2 text-sm font-semibold text-gray-500">归档账本</h3>
+  <p class="mb-2 text-xs text-gray-400">归档后账本不可见但仍保留数据（仅所有者可操作）。</p>
+  <form method="post" action="{% url 'ledgers:archive' ledger.pk %}" onsubmit="return confirm('确认归档该账本？')">
+    {% csrf_token %}
+    <button class="btn-danger w-full">归档账本</button>
+  </form>
+</div>
+{% endblock %}

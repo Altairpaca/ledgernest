@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}标签 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <h2 class="text-lg font-bold">标签</h2>
+  <a href="{% url 'transactions:tag_new' ledger.pk %}" class="btn-primary !min-h-[40px] !px-3 !py-1.5 text-sm">＋ 新增</a>
+</div>
+
+<div class="space-y-2">
+  {% for tag in tags %}
+  <div class="card flex items-center gap-3 p-3">
+    <span class="h-3.5 w-3.5 rounded-full" style="background-color: {{ tag.color|default:'#9ca3af' }}"></span>
+    <div class="min-w-0 flex-1">
+      <span class="text-sm font-medium">{{ tag.name }}</span>
+      <span class="ml-2 text-xs text-gray-400">{{ tag.usage }} 笔流水</span>
+    </div>
+    <div class="flex gap-1.5">
+      <a href="{% url 'transactions:tag_edit' ledger.pk tag.pk %}" class="btn-secondary !min-h-[32px] !px-2.5 !py-0.5 text-xs">编辑</a>
+      <form method="post" action="{% url 'transactions:tag_delete' ledger.pk tag.pk %}" onsubmit="return confirm('删除标签？不影响已有流水。')">
+        {% csrf_token %}
+        <button class="btn-ghost !min-h-[32px] !px-2.5 !py-0.5 text-xs">删除</button>
+      </form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <span class="text-4xl">🏷</span>
+    <p>还没有标签</p>
+    <p class="text-sm">标签用于跨分类的标记，如「家庭」「差旅」。</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

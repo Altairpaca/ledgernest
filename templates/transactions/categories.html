@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load core_extras %}
+{% block title %}分类 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <h2 class="text-lg font-bold">分类</h2>
+  <a href="{% url 'transactions:category_new' ledger.pk %}" class="btn-primary !min-h-[40px] !px-3 !py-1.5 text-sm">＋ 新增</a>
+</div>
+
+{% for kind, items in kind_groups %}
+<div class="mb-6">
+  <h3 class="mb-2 text-sm font-medium text-gray-400">{{ kind }}</h3>
+  <div class="grid grid-cols-4 gap-2 sm:grid-cols-6 category-grid" data-kind="{{ kind }}">
+    {% for cat in items %}
+    <div class="relative">
+      <a href="{% url 'transactions:category_edit' ledger.pk cat.pk %}"
+        class="flex flex-col items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-1 py-3 text-center transition-colors active:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:active:bg-gray-800 {% if not cat.is_active %}opacity-50{% endif %}">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full text-lg {{ cat.icon|default:'▣'|icon_color }}">{{ cat.icon|default:"▣" }}</span>
+        <span class="w-full truncate text-xs text-gray-700 dark:text-gray-300">{{ cat.name }}</span>
+        {% if cat.children_count %}<span class="badge bg-gray-100 text-gray-400 dark:bg-gray-800">{{ cat.children_count }} 子类</span>{% endif %}
+      </a>
+      {% if not cat.is_active %}<span class="badge absolute right-1 top-1 bg-gray-200 text-gray-500 dark:bg-gray-700">停用</span>{% endif %}
+    </div>
+    {% endfor %}
+    {% if not items %}
+    <div class="col-span-4 py-4 text-center text-xs text-gray-400">暂无{{ kind }}</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+<p class="text-xs text-gray-400">分类支持父子层级，统计自动汇总子分类；已被历史流水使用的分类不能删除，可以停用。</p>
+{% endblock %}

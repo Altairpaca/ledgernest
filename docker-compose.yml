@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ledgernest}
+      POSTGRES_USER: ${DB_USER:-ledgernest}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ledgernest}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ledgernest}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_ENGINE: postgres
+      DB_NAME: ${DB_NAME:-ledgernest}
+      DB_USER: ${DB_USER:-ledgernest}
+      DB_PASSWORD: ${DB_PASSWORD:-ledgernest}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?请在 .env 中设置 DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-false}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-}
+      REGISTRATION_MODE: ${REGISTRATION_MODE:-open}
+      INITIAL_ADMIN_USERNAME: ${INITIAL_ADMIN_USERNAME:-}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-CNY}
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-Asia/Taipei}
+    ports:
+      # 宿主 8008 → 容器 8000（若 8008 也被占用，可改为其他端口）
+      - "8008:8000"
+
+volumes:
+  pgdata:

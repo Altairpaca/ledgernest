@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}预算 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <h2 class="text-lg font-bold">预算</h2>
+  <a href="{% url 'transactions:budget_new' ledger.pk %}" class="btn-primary !min-h-[40px] !px-3 !py-1.5 text-sm">＋ 新增</a>
+</div>
+
+<form method="get" class="mb-4 grid grid-cols-2 gap-3">
+  <select name="year" class="form-select" onchange="this.form.submit()">
+    {% for y in year_range %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }} 年</option>{% endfor %}
+  </select>
+  <select name="month" class="form-select" onchange="this.form.submit()">
+    {% for m in month_range %}<option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }} 月</option>{% endfor %}
+  </select>
+</form>
+
+<div class="space-y-3">
+  {% for item in statuses %}
+  <div class="card p-4">
+    <div class="mb-2 flex items-center justify-between">
+      <span class="text-sm font-medium">{{ item.label }}</span>
+      <span class="text-xs text-gray-400">{{ item.spent }} / {{ item.amount }} {{ ledger.base_currency }}</span>
+    </div>
+    <div class="mb-2 h-2.5 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+      <div class="h-full rounded-full {% if item.percent > 100 %}bg-red-500{% elif item.percent > 80 %}bg-amber-500{% else %}bg-brand-500{% endif %}"
+           style="width: {{ item.percent|floatformat:1 }}%"></div>
+    </div>
+    <div class="flex items-center justify-between">
+      <span class="text-xs {% if item.remaining < 0 %}text-red-500{% else %}text-gray-400{% endif %}">
+        {% if item.remaining < 0 %}超支 {{ item.remaining|stringformat:"f"|slice:"1:" }}{% else %}剩余 {{ item.remaining }}{% endif %}
+      </span>
+      <div class="flex gap-1.5">
+        <a href="{% url 'transactions:budget_edit' ledger.pk item.budget.pk %}" class="btn-secondary !min-h-[30px] !px-2.5 !py-0.5 text-xs">编辑</a>
+        <form method="post" action="{% url 'transactions:budget_delete' ledger.pk item.budget.pk %}" onsubmit="return confirm('删除该预算？')">
+          {% csrf_token %}
+          <button class="btn-ghost !min-h-[30px] !px-2.5 !py-0.5 text-xs">删除</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="empty-state">
+    <span class="text-4xl">🎯</span>
+    <p>{{ year }} 年 {{ month }} 月还没有预算</p>
+    <a href="{% url 'transactions:budget_new' ledger.pk %}" class="btn-primary mt-2">设置预算</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

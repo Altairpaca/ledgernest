@@ -1,0 +1,33 @@
+{% extends "reports/_report_base.html" %}
+{% block report_params %}
+<form method="get" class="mb-3 grid grid-cols-2 gap-2">
+  <select name="year" class="form-select !min-h-[40px] !py-1.5 text-sm" onchange="this.form.submit()">
+    {% for y in year_range %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+  </select>
+  <select name="month" class="form-select !min-h-[40px] !py-1.5 text-sm" onchange="this.form.submit()">
+    {% for m in month_range %}<option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ m }} 月</option>{% endfor %}
+  </select>
+</form>
+{% endblock %}
+{% block report_table %}
+<div class="card overflow-hidden">
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in rows %}
+    <div class="grid grid-cols-5 items-center px-4 py-2.5 text-sm">
+      <span class="truncate text-gray-600 dark:text-gray-300">{{ r.label }}</span>
+      <span class="text-right font-medium {% if r.label == '净额' %}{% if r.this < 0 %}text-red-500{% else %}text-green-600{% endif %}{% endif %}">{{ r.this }}</span>
+      <span class="text-right text-gray-400">{{ r.last }}</span>
+      <span class="text-right {% if r.delta is not None %}{% if r.delta >= 0 %}text-green-500{% else %}text-red-400{% endif %}{% else %}text-gray-400{% endif %}">
+        {% if r.delta is not None %}{% if r.delta >= 0 %}+{% endif %}{{ r.delta }}{% else %}—{% endif %}
+      </span>
+      <span class="text-right text-xs {% if r.pct is not None %}{% if r.pct >= 0 %}text-green-500{% else %}text-red-400{% endif %}{% else %}text-gray-400{% endif %}">
+        {% if r.pct is not None %}{{ r.pct|floatformat:0 }}%{% else %}—{% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="grid grid-cols-5 border-t border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium text-gray-400 dark:border-gray-800 dark:bg-gray-800/50">
+    <span>项目</span><span class="text-right">本月</span><span class="text-right">上月</span><span class="text-right">差额</span><span class="text-right">环比</span>
+  </div>
+</div>
+{% endblock %}

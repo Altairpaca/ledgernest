@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ report.name }} - 账巢{% endblock %}
+{% block content %}
+<div class="mb-3 flex items-center justify-between">
+  <div class="min-w-0">
+    <a href="{% url 'reports:index' ledger.pk %}" class="text-xs text-gray-400">‹ 报表中心</a>
+    <h2 class="truncate text-lg font-bold">{{ report.name }}</h2>
+    <p class="text-xs text-gray-400">{{ report.description|default:"自定义报表" }} · {{ report.created_by.effective_display_name }} · {{ result.start|date:"Y-m-d" }} ~ {{ result.end|date:"Y-m-d" }}</p>
+  </div>
+  <div class="flex shrink-0 gap-1.5">
+    {% if membership_role <= 30 or report.created_by_id == request.user.id %}
+    <a href="{% url 'reports:custom_edit' ledger.pk report.pk %}" class="btn-secondary !min-h-[36px] !px-3 !py-1 text-xs">编辑</a>
+    <form method="post" action="{% url 'reports:custom_toggle_share' ledger.pk report.pk %}">
+      {% csrf_token %}
+      <button class="btn-secondary !min-h-[36px] !px-3 !py-1 text-xs">{% if report.is_shared %}取消共享{% else %}共享{% endif %}</button>
+    </form>
+    <form method="post" action="{% url 'reports:custom_delete' ledger.pk report.pk %}" onsubmit="return confirm('删除该报表定义？')">
+      {% csrf_token %}
+      <button class="btn-danger !min-h-[36px] !px-3 !py-1 text-xs">删除</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if chart and chart.labels %}
+<div class="card mb-3 p-3">
+  <div class="mb-2 flex gap-2">
+    <button type="button" onclick="LNSwitchChart('chart-main', 'bar')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">柱状图</button>
+    <button type="button" onclick="LNSwitchChart('chart-main', 'line')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">折线图</button>
+    <button type="button" onclick="LNSwitchChart('chart-main', 'pie')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">饼图</button>
+  </div>
+  <div id="chart-main" class="h-64 w-full" data-chart='{{ chart_json|safe }}' data-chart-type="{{ chart_type }}"></div>
+</div>
+{% endif %}
+
+<div class="card overflow-hidden">
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in result.rows %}
+    <div class="grid grid-cols-3 px-4 py-2.5 text-sm">
+      <span class="col-span-2 truncate text-gray-600 dark:text-gray-300">{{ r.label }}</span>
+      <span class="text-right font-medium">{{ r.value }}</span>
+    </div>
+    {% empty %}
+    <div class="empty-state !py-10"><p>范围内没有数据</p></div>
+    {% endfor %}
+  </div>
+  {% if result.rows %}
+  <div class="flex justify-between border-t border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium text-gray-400 dark:border-gray-800 dark:bg-gray-800/50">
+    <span>合计</span><span>{{ result.total }}</span>
+  </div>
+  {% endif %}
+</div>
+
+<div class="mt-4 flex gap-2">
+  <a class="btn-secondary flex-1 text-sm" href="{% url 'imports:export_report' ledger.pk %}?format=csv&report_pk={{ report.pk }}">导出 CSV</a>
+  <a class="btn-secondary flex-1 text-sm" href="{% url 'imports:export_report' ledger.pk %}?format=xlsx&report_pk={{ report.pk }}">导出 XLSX</a>
+  <a class="btn-secondary flex-1 text-sm" href="{% url 'reports:custom_view' ledger.pk report.pk %}?format=json">JSON 数据</a>
+</div>
+{% endblock %}

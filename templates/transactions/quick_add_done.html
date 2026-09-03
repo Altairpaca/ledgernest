@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}已记账 - 账巢{% endblock %}
+{% block header_left %}<a href="{% url 'transactions:list' ledger.pk %}" class="btn-ghost !px-2 !py-1">‹ 返回</a>{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-md pt-6 text-center">
+  <div class="mb-4 text-6xl">✅</div>
+  <h2 class="mb-1 text-xl font-bold">已记一笔</h2>
+  <p class="mb-6 text-sm text-gray-500">{{ txn.get_type_display }} <span class="font-medium {% if txn.type == 'refund' %}text-teal-600{% elif txn.type == 'reimbursement' %}text-blue-600{% endif %}">+{{ txn.amount }} {{ txn.currency }}</span> · {{ txn.date|date:"Y-m-d" }}</p>
+
+  <div class="card mb-4 p-4 text-left text-sm">
+    <div class="flex justify-between py-1.5"><span class="text-gray-400">金额</span><span class="font-medium">{{ txn.amount }} {{ txn.currency }}</span></div>
+    <div class="flex justify-between py-1.5"><span class="text-gray-400">账户</span><span>{{ txn.from_account.name|default:"—" }}{% if txn.to_account %} → {{ txn.to_account.name }}{% endif %}</span></div>
+    {% if txn.category %}<div class="flex justify-between py-1.5"><span class="text-gray-400">分类</span><span>{{ txn.category.name }}</span></div>{% endif %}
+    {% if txn.description %}<div class="flex justify-between py-1.5"><span class="text-gray-400">备注</span><span class="truncate">{{ txn.description }}</span></div>{% endif %}
+  </div>
+
+  <div class="grid grid-cols-2 gap-3">
+    <a href="{% url 'transactions:quick_add' ledger.pk %}" class="btn-primary">继续记一笔</a>
+    <a href="{% url 'transactions:list' ledger.pk %}" class="btn-secondary">查看流水</a>
+  </div>
+  <a href="{% url 'transactions:detail' ledger.pk txn.pk %}" class="mt-3 inline-block text-sm text-gray-400">查看详情 →</a>
+</div>
+{% endblock %}

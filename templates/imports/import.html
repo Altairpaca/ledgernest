@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}导入流水 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">导入流水</h2>
+  <p class="text-xs text-gray-400">支持 CSV / XLSX，先预览校验、确认后导入；仅导入有效行，无效行跳过并展示错误。</p>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-2 text-sm font-semibold text-gray-500">模板列（固定顺序）</h3>
+  <div class="flex flex-wrap gap-1.5">
+    {% for c in template_columns %}<span class="badge bg-gray-100 text-gray-600 dark:bg-gray-800">{{ c }}</span>{% endfor %}
+  </div>
+  <a href="{% url 'imports:template' ledger.pk %}" class="btn-secondary mt-3 w-full text-sm">下载导入模板（含示例）</a>
+</div>
+
+<form method="post" action="{% url 'imports:preview' ledger.pk %}" enctype="multipart/form-data" class="card p-4">
+  {% csrf_token %}
+  <label class="form-label">选择文件（CSV 或 XLSX，≤20MB）</label>
+  <input type="file" name="file" accept=".csv,.xlsx" required class="form-input file:text-sm file:mr-3">
+  <p class="mt-2 text-xs text-gray-400">
+    日期格式 YYYY-MM-DD；类型：支出/收入/转账/调整；转账需填写「目标账户」；分类、账户、标签必须已存在（标签不存在会自动创建）。
+  </p>
+  <button type="submit" class="btn-primary mt-3 w-full">上传并预览</button>
+</form>
+{% endblock %}

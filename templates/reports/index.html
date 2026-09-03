@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}报表 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4 flex items-center justify-between">
+  <h2 class="text-lg font-bold">报表中心</h2>
+  <a href="{% url 'reports:custom_new' ledger.pk %}" class="btn-primary !min-h-[40px] !px-3 !py-1.5 text-sm">＋ 自定义报表</a>
+</div>
+
+<h3 class="mb-2 text-sm font-medium text-gray-400">内置报表</h3>
+<div class="grid grid-cols-2 gap-3">
+  {% for b in builtin %}
+  <a href="{% url 'reports:builtin' ledger.pk b.key %}" class="card p-4 active:bg-gray-50 dark:active:bg-gray-800">
+    <div class="text-lg font-semibold">{{ b.name }}</div>
+    <div class="mt-1 text-xs leading-relaxed text-gray-400">{{ b.desc }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+{% if custom %}
+<h3 class="mb-2 mt-6 text-sm font-medium text-gray-400">我的自定义报表</h3>
+<div class="space-y-2">
+  {% for r in custom %}
+  <a href="{% url 'reports:custom_view' ledger.pk r.pk %}" class="card flex items-center gap-3 p-4 active:bg-gray-50 dark:active:bg-gray-800">
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-2">
+        <span class="truncate text-sm font-medium">{{ r.name }}</span>
+        {% if not r.is_shared %}<span class="badge bg-gray-100 text-gray-400">仅自己</span>{% endif %}
+      </div>
+      <div class="mt-0.5 text-xs text-gray-400">{{ r.description|default:r.definition_json.group_by }} · {{ r.created_by.effective_display_name }} · 更新于 {{ r.updated_at|date:"m-d H:i" }}</div>
+    </div>
+    <span class="text-gray-300">›</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="text-4xl">📈</span>
+  <p>还没有自定义报表</p>
+  <p class="text-sm">选择维度、指标与图表类型，保存后与账本成员共享。</p>
+</div>
+{% endif %}
+{% endblock %}

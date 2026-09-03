@@ -1,0 +1,28 @@
+{% extends "reports/_report_base.html" %}
+{% load core_extras %}
+{% block report_params %}
+<form method="get" class="mb-3 grid grid-cols-2 gap-2">
+  <input type="date" name="start" class="form-input !min-h-[40px] !py-1.5 text-sm" value="{{ start|date:'Y-m-d' }}">
+  <input type="date" name="end" class="form-input !min-h-[40px] !py-1.5 text-sm" value="{{ end|date:'Y-m-d' }}">
+</form>
+{% endblock %}
+{% block report_table %}
+<div class="card overflow-hidden">
+  <div class="divide-y divide-gray-100 dark:divide-gray-800">
+    {% for r in rows %}
+    <div class="flex items-center gap-3 px-4 py-2.5 text-sm">
+      <span class="flex h-7 w-7 items-center justify-center rounded-full {{ r.icon|default:'▣'|icon_color }}">{{ r.icon|default:"▣" }}</span>
+      <span class="flex-1 text-gray-600 dark:text-gray-300">{{ r.name }}</span>
+      <span class="text-xs text-gray-400">{{ r.count }} 笔</span>
+      <span class="text-teal-600 dark:text-teal-400">{{ r.refund }}</span>
+      <span class="text-blue-600 dark:text-blue-400">{{ r.reimbursement }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="grid grid-cols-3 border-t border-gray-200 bg-gray-50 px-4 py-2 text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-800/50">
+    <span>合计：{{ total }}</span>
+    <span class="text-center text-teal-600 dark:text-teal-400">退款 {{ total_refund }}</span>
+    <span class="text-right text-blue-600 dark:text-blue-400">报销 {{ total_reimbursement }}</span>
+  </div>
+</div>
+{% endblock %}

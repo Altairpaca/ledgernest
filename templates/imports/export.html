@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}导出 - 账巢{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <h2 class="text-lg font-bold">导出与备份</h2>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-1 text-sm font-semibold">导出流水</h3>
+  <p class="mb-3 text-xs text-gray-400">进入流水页设置筛选后导出当前结果；或直接导出全部（最多 50000 条）。</p>
+  <div class="flex gap-2">
+    <a href="{% url 'transactions:list' ledger.pk %}" class="btn-secondary flex-1 text-sm">先设置筛选</a>
+    <a href="{% url 'imports:export_transactions' ledger.pk %}?format=csv" class="btn-primary flex-1 text-sm">全部导出 CSV</a>
+    <a href="{% url 'imports:export_transactions' ledger.pk %}?format=xlsx" class="btn-secondary flex-1 text-sm">XLSX</a>
+  </div>
+</div>
+
+<div class="card mb-4 p-4">
+  <h3 class="mb-1 text-sm font-semibold">导出报表</h3>
+  <p class="mb-3 text-xs text-gray-400">报表页内提供对应导出按钮；也可以从「报表中心」进入任意报表后导出 CSV/XLSX。</p>
+  <a href="{% url 'reports:index' ledger.pk %}" class="btn-secondary w-full text-sm">前往报表中心</a>
+</div>
+
+<div class="card p-4">
+  <h3 class="mb-1 text-sm font-semibold">账本备份</h3>
+  <p class="mb-3 text-xs text-gray-400">
+    导出整个账本的结构化备份（ZIP 内为 JSON）：账本信息、成员、账户、分类、标签、流水、拆分、预算与报表定义。不含密码。
+    恢复方式：<code class="rounded bg-gray-100 px-1 dark:bg-gray-800">python manage.py restore_backup backup.zip</code>
+  </p>
+  <a href="{% url 'imports:backup' ledger.pk %}" class="btn-primary w-full text-sm">下载备份</a>
+</div>
+{% endblock %}

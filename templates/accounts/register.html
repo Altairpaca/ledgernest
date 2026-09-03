@@ -1,0 +1,22 @@
+{% extends "auth_base.html" %}
+{% block title %}注册 - 账巢{% endblock %}
+{% block content %}
+<div class="card p-6">
+  <h2 class="mb-4 text-lg font-semibold">创建账号</h2>
+  <form method="post" class="space-y-4" novalidate>
+    {% csrf_token %}
+    {% for field in form %}
+    <div>
+      <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}
+      <p class="mt-1 text-sm text-red-500">{{ field.errors.0 }}</p>
+      {% endif %}
+      {% if field.help_text %}<p class="mt-1 text-xs text-gray-400">{{ field.help_text|safe }}</p>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn-primary w-full">注册并登录</button>
+  </form>
+</div>
+<p class="mt-4 text-center text-sm text-gray-500">已有账号？<a href="{% url 'accounts:login' %}" class="text-brand-600 font-medium">去登录</a></p>
+{% endblock %}
