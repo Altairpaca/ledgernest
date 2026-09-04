@@ -24,7 +24,7 @@ LedgerNest is a modular Django application for small teams or households that ne
 
 Python 3.12+ · Django 5.2 · PostgreSQL · HTMX · Alpine.js · Tailwind CSS · ECharts · pytest · Docker
 
-The main Chinese README contains the complete feature matrix, deployment guide, report definitions, permission model, import format, and operational notes: [README.md](README.md).
+The full Chinese documentation contains the complete feature matrix, deployment guide, report definitions, permission model, import format, and operational notes: [README.zh-CN.md](README.zh-CN.md).
 
 ## Verification
 
