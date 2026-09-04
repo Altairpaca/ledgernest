@@ -208,10 +208,10 @@
 
 <script>
 function quickAdd() {
-  const catsJson = {{ expense_cats_json|safe }};
-  const incomeJson = {{ income_cats_json|safe }};
-  const accountsJson = {{ accounts_json|safe }};
-  const state = {{ quick_state_json|safe }};
+  const catsJson = JSON.parse(document.getElementById("expense-cats-json").textContent);
+  const incomeJson = JSON.parse(document.getElementById("income-cats-json").textContent);
+  const accountsJson = JSON.parse(document.getElementById("accounts-json").textContent);
+  const state = JSON.parse(document.getElementById("quick-state-json").textContent);
   return {
     type: state.type || "expense",
     amount: state.amount || "",
@@ -328,6 +328,10 @@ function quickAdd() {
   };
 }
 </script>
+{{ quick_state_json|json_script:"quick-state-json" }}
+{{ accounts_json|json_script:"accounts-json" }}
+{{ expense_cats_json|json_script:"expense-cats-json" }}
+{{ income_cats_json|json_script:"income-cats-json" }}
 {% endblock %}
 {% block scripts %}
 <script>

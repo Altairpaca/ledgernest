@@ -86,8 +86,6 @@ def dashboard(request, ledger_pk):
         "labels": [i["account"].name for i in positive],
         "series": [{"name": "资产", "data": [float(i["balance"]) for i in positive]}],
     }
-    import json as json_module
-
     return render(
         request,
         "ledgers/dashboard.html",
@@ -108,7 +106,18 @@ def dashboard(request, ledger_pk):
             "income_items": income_items,
             "income_total": income_total,
             "balances": balances,
-            "assets_chart_json": json_module.dumps(assets_chart, ensure_ascii=False),
+            "trend_chart": {
+                "labels": [r["label"] for r in trend],
+                "series": [
+                    {"name": "收入", "data": [float(r["income"]) for r in trend]},
+                    {"name": "支出", "data": [float(r["expense"]) for r in trend]},
+                ],
+            },
+            "expense_chart": {
+                "labels": [r["name"] for r in expense_items],
+                "series": [{"name": "支出", "data": [float(r["total"]) for r in expense_items]}],
+            },
+            "assets_chart": assets_chart,
             "total_balance": total_balance,
             "trend": trend,
             "budgets": budgets,
