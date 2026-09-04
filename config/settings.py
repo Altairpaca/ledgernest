@@ -4,6 +4,7 @@
 本地开发默认 SQLite；Docker/生产环境通过 DB_* 环境变量使用 PostgreSQL。
 """
 import os
+import secrets
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,12 +24,12 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "django-insecure-dev-only-key-change-me-in-production",
+    secrets.token_urlsafe(50),
 )
 
-DEBUG = env_bool("DJANGO_DEBUG", True)
+DEBUG = env_bool("DJANGO_DEBUG", False)
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "*")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
     "http://localhost,http://127.0.0.1,http://100.64.0.0,http://[::1]",
@@ -97,7 +98,7 @@ if os.environ.get("DB_ENGINE", "").lower() == "postgres":
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", "ledgernest"),
             "USER": os.environ.get("DB_USER", "ledgernest"),
-            "PASSWORD": os.environ.get("DB_PASSWORD", "ledgernest"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DB_PORT", "5432"),
             "CONN_MAX_AGE": 60,
@@ -176,7 +177,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # 业务配置（可通过环境变量覆盖）
 # ---------------------------------------------------------------------------
 # 注册模式：open=任何人可注册；admin=仅管理员创建用户；closed=关闭注册
-REGISTRATION_MODE = os.environ.get("REGISTRATION_MODE", "open")
+REGISTRATION_MODE = os.environ.get("REGISTRATION_MODE", "closed")
 DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY", "CNY")
 DEFAULT_FISCAL_YEAR_START = int(os.environ.get("DEFAULT_FISCAL_YEAR_START", "1"))
 # 导出/导入单次行数上限，防止内存暴涨

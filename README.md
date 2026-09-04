@@ -73,7 +73,7 @@ npm install && npx tailwindcss -i static/css/input.css -o static/css/app.css --m
 python manage.py seed_demo
 
 # 5. 启动
-python manage.py runserver 0.0.0.0:8000
+python manage.py runserver 127.0.0.1:8000
 ```
 
 访问 http://127.0.0.1:8000/ 。
@@ -101,13 +101,13 @@ docker compose up -d --build
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `DJANGO_SECRET_KEY` | （开发用固定值） | **生产必改**，随机长串 |
-| `DJANGO_DEBUG` | `true` | 生产设 `false` |
-| `DJANGO_ALLOWED_HOSTS` | `*` | 逗号分隔 |
+| `DJANGO_SECRET_KEY` | （未设置时每次启动随机生成） | **生产必设**，随机长串 |
+| `DJANGO_DEBUG` | `false` | 本地调试时显式设为 `true` |
+| `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | 逗号分隔 |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | localhost 系列 | 逗号分隔 |
 | `DB_ENGINE` | 空=SQLite | `postgres` 启用 PostgreSQL |
 | `DB_NAME/DB_USER/DB_PASSWORD/DB_HOST/DB_PORT` | ledgernest | Docker 环境自动配置 |
-| `REGISTRATION_MODE` | `open` | `open`/`admin`/`closed` |
+| `REGISTRATION_MODE` | `closed` | `open`/`admin`/`closed` |
 | `INITIAL_ADMIN_USERNAME/PASSWORD/EMAIL` | 空 | 首次启动幂等创建管理员 |
 | `DEFAULT_CURRENCY` | `CNY` | 新建账本默认货币 |
 | `DJANGO_TIME_ZONE` | `Asia/Taipei` | |
