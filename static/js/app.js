@@ -38,7 +38,8 @@
   window.LNChartFromData = function (elId, overrideType) {
     var el = document.getElementById(elId);
     if (!el || typeof echarts === "undefined") return;
-    var data = JSON.parse(el.dataset.chart || "{}");
+    var dataNode = el.dataset.chartScript ? document.getElementById(el.dataset.chartScript) : null;
+    var data = JSON.parse(dataNode ? dataNode.textContent : (el.dataset.chart || "{}"));
     var type = overrideType || el.dataset.chartType || "bar";
     var labels = data.labels || [];
     var series = data.series || [];

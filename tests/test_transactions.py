@@ -227,6 +227,32 @@ def test_quick_add_creates_audit(client_user, ledger, account_cash):
     assert AuditLog.objects.filter(ledger=ledger, action="create").exists()
 
 
+def test_quick_add_json_escapes_editor_values(client_user, ledger):
+    dangerous = "</script><script>alert(1)</script>"
+    Account.objects.create(ledger=ledger, name=dangerous, account_type="cash")
+    Category.objects.create(ledger=ledger, kind="expense", name=dangerous)
+
+    response = client_user.get(reverse("transactions:quick_add", args=[ledger.pk]))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert dangerous not in content
+    assert "\\u003C/script\\u003E" in content
+
+
+def test_dashboard_chart_json_escapes_account_names(client_user, ledger):
+    dangerous = "' onmouseover='alert(1)"
+    Account.objects.create(ledger=ledger, name=dangerous, account_type="cash", opening_balance=100)
+
+    response = client_user.get(reverse("ledgers:dashboard", args=[ledger.pk]))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "data-chart='" not in content
+    assert 'id="assets-chart-json" type="application/json"' in content
+    assert dangerous in content
+
+
 def test_quick_add_split_via_form(client_user, ledger, account_cash, category_food):
     from transactions.models import Category
 

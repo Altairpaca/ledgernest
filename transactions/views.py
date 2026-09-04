@@ -166,10 +166,10 @@ def render_quick_add(request, ledger, form):
         {
             "ledger": ledger,
             "form": form,
-            "quick_state_json": json.dumps(state),
-            "accounts_json": json.dumps([{"id": a.id, "name": a.name} for a in account_list], ensure_ascii=False),
-            "expense_cats_json": json.dumps(cat_tree(expense_cats), ensure_ascii=False),
-            "income_cats_json": json.dumps(cat_tree(income_cats), ensure_ascii=False),
+            "quick_state_json": state,
+            "accounts_json": [{"id": a.id, "name": a.name} for a in account_list],
+            "expense_cats_json": cat_tree(expense_cats),
+            "income_cats_json": cat_tree(income_cats),
             "all_tags": Tag.objects.filter(ledger=ledger).order_by("name"),
         },
     )

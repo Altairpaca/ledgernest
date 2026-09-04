@@ -82,7 +82,8 @@
 <!-- 近 6 个月趋势 -->
 <div class="card mb-3 p-4">
   <h3 class="mb-2 text-sm font-semibold">近 6 个月收支趋势</h3>
-  <div id="trend-chart" class="h-52 w-full" data-chart='{"labels": [{% for r in trend %}"{{ r.label }}"{% if not forloop.last %},{% endif %}{% endfor %}], "series": [{"name": "收入", "data": [{% for r in trend %}{{ r.income }}{% if not forloop.last %},{% endif %}{% endfor %}]}, {"name": "支出", "data": [{% for r in trend %}{{ r.expense }}{% if not forloop.last %},{% endif %}{% endfor %}]}]}' data-chart-type="bar"></div>
+  <div id="trend-chart" class="h-52 w-full" data-chart-script="trend-chart-json" data-chart-type="bar"></div>
+  {{ trend_chart|json_script:"trend-chart-json" }}
 </div>
 
 <!-- 支出分类排行 -->
@@ -92,7 +93,8 @@
     <h3 class="text-sm font-semibold">本月支出分类</h3>
     <span class="text-xs text-gray-400">共 {{ expense_total }}</span>
   </div>
-  <div id="expense-chart" class="h-44 w-full" data-chart='{"labels": [{% for r in expense_items %}"{{ r.name }}"{% if not forloop.last %},{% endif %}{% endfor %}], "series": [{"name": "支出", "data": [{% for r in expense_items %}{{ r.total }}{% if not forloop.last %},{% endif %}{% endfor %}]}]}' data-chart-type="pie"></div>
+  <div id="expense-chart" class="h-44 w-full" data-chart-script="expense-chart-json" data-chart-type="pie"></div>
+  {{ expense_chart|json_script:"expense-chart-json" }}
   <div class="mt-1 space-y-1">
     {% for r in expense_items %}
     <div class="flex items-center justify-between text-xs">
@@ -111,7 +113,8 @@
     <a href="{% url 'transactions:accounts' ledger.pk %}" class="text-xs text-brand-600">管理 →</a>
   </div>
   <div class="flex items-center gap-3">
-    <div id="assets-chart" class="h-36 w-36 shrink-0" data-chart='{{ assets_chart_json|safe }}' data-chart-type="pie"></div>
+    <div id="assets-chart" class="h-36 w-36 shrink-0" data-chart-script="assets-chart-json" data-chart-type="pie"></div>
+    {{ assets_chart|json_script:"assets-chart-json" }}
     <div class="min-w-0 flex-1 space-y-1.5">
       {% for item in balances %}
       <div class="flex items-center justify-between gap-2 text-sm">

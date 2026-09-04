@@ -29,7 +29,8 @@
     <button type="button" onclick="LNSwitchChart('chart-main', 'line')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">折线图</button>
     <button type="button" onclick="LNSwitchChart('chart-main', 'pie')" class="chip !min-h-[32px] !px-3 !py-0.5 text-xs border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">饼图</button>
   </div>
-  <div id="chart-main" class="h-64 w-full" data-chart='{{ chart_json|safe }}' data-chart-type="{{ chart_type }}"></div>
+  <div id="chart-main" class="h-64 w-full" data-chart-script="chart-main-json" data-chart-type="{{ chart_type }}"></div>
+  {{ chart|json_script:"chart-main-json" }}
 </div>
 {% endif %}
 
