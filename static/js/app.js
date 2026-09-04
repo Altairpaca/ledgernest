@@ -82,7 +82,7 @@
   };
 
   document.addEventListener("DOMContentLoaded", function () {
-    document.querySelectorAll("[data-chart]").forEach(function (el) {
+    document.querySelectorAll("[data-chart], [data-chart-script]").forEach(function (el) {
       window.LNChartFromData(el.id);
     });
   });
