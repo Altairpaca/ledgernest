@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest pytest-django
+      - name: Django checks
+        run: python manage.py check --settings=config.settings_test
+      - name: Tests
+        run: python -m pytest
+      - name: Compile
+        run: python -m compileall -q accounts audit config core imports_exports ledgers reports transactions tests
+      - name: Whitespace check
+        run: git diff --check
